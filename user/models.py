@@ -21,3 +21,6 @@ class Pupil(models.Model):
         'userType': User.UserTypeChoices.PUPIL
     })
     class_name = models.CharField(max_length=10)
+
+    def __str__(self):
+        return f'{self.user.full_name}, {self.class_name}'

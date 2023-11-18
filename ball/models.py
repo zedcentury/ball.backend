@@ -33,3 +33,9 @@ class Ball(models.Model):
     reason = models.CharField(max_length=100, default=None, null=True, blank=True)
     score = models.IntegerField()
     createdAt = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        if self.score > 0:
+            return f'{self.user.full_name} (+{self.score})'
+        else:
+            return f'{self.user.full_name} ({self.score})'

@@ -28,8 +28,7 @@ class BallView(APIView):
     # permission_classes = [(IsParent | IsStudent) & IsAuthenticated]
 
     def get(self, request):
-        # user = request.user
-        user = User.objects.get(id=2)
+        user = request.user
         today = datetime.datetime.now()
         last_week = [today - datetime.timedelta(days=i) for i in range(1, 8)]
         aggregate_dict = {
