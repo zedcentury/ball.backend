@@ -4,3 +4,6 @@ from django.apps import AppConfig
 class BallConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'ball'
+
+    def ready(self):
+        from . import signals

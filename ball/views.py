@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ball.models import Ball, Reason
+from ball.models import Ball, Reason, BallStat
 from ball.serializers import BallCreateSerializer, ReasonsSerializer
 from config.permissions import IsStudent, IsParent, IsTeacher
 from user.models import User
@@ -25,25 +25,49 @@ class BallView(APIView):
     Har bir o'quvchi uchun shu kuni to'plagan umumiy ball
     """
 
-    # permission_classes = [(IsParent | IsStudent) & IsAuthenticated]
+    def get(self, request):
+        today = datetime.datetime.now()
+        today_ball_stat = BallStat.objects.filter(user=request.user, createdAt=today.date()).first()
+
+        if today_ball_stat is None:
+            return Response({'today': 100})
+
+        return Response({'today': today_ball_stat.score + 100})
+
+
+class BallStatsView(APIView):
+    """
+    Oxirgi 7kun natijalari
+    """
 
     def get(self, request):
         user = request.user
         today = datetime.datetime.now()
-        last_week = [today - datetime.timedelta(days=i) for i in range(1, 8)]
-        aggregate_dict = {
-            f'{day.day}/{day.month}/{day.year}': Sum('score', filter=Q(createdAt__day=day.day), default=0) for day in
-            last_week
-        }
 
-        score = Ball.objects.filter(user=user).aggregate(
-            **{'today': Sum('score', filter=Q(createdAt__day=today.day), default=0), **aggregate_dict})
+        start_date = today.date() - datetime.timedelta(days=7)
+        end_date = today.date() - datetime.timedelta(days=1)
 
-        score = dict(list(score.items())[:(today.date() - user.date_joined.date()).days + 1])
+        if user.date_joined.date() > start_date:
+            start_date = user.date_joined.date()
 
-        score = dict(map(lambda item: (item[0], item[1] + 100), score.items()))
+        last_week_ball_stats = BallStat.objects.filter(user=user, createdAt__gte=start_date, createdAt__lte=end_date)
 
-        return Response(score)
+        scores = []
+        difference = (end_date - start_date).days + 1
+
+        for _ in range(difference):
+            for stat in last_week_ball_stats:
+                if stat.createdAt == end_date:
+                    scores.append(stat.score)
+                    break
+            else:
+                scores.append(0)
+
+            end_date -= datetime.timedelta(days=1)
+
+        scores = list(map(lambda x: x + 100, scores))
+
+        return Response({'scores': scores})
 
 
 class BallCreateView(CreateAPIView):

@@ -2,13 +2,13 @@ from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from user.models import Pupil
-from user.serializers import PupilsSerializer, LoginSerializer, UserSerializer
+from user.serializers import PupilsSerializer, LoginSerializer, UserSerializer, PupilCreateSerializer
 
 
 class LoginView(APIView):
@@ -51,3 +51,7 @@ class PupilsView(ListAPIView):
 
     def get_queryset(self):
         return Pupil.objects.prefetch_related('user')
+
+
+class PupilCreateView(CreateAPIView):
+    serializer_class = PupilCreateSerializer

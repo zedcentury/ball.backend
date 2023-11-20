@@ -39,3 +39,14 @@ class Ball(models.Model):
             return f'{self.user.full_name} (+{self.score})'
         else:
             return f'{self.user.full_name} ({self.score})'
+
+
+class BallStat(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ball_stat_to_user', limit_choices_to={
+        'userType': User.UserTypeChoices.PUPIL
+    })
+    score = models.IntegerField()
+    createdAt = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.user.full_name} ({self.score}, {self.createdAt})'
