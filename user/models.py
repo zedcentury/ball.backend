@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from common.models import ClassName
+
 
 class User(AbstractUser):
     class UserTypeChoices(models.IntegerChoices):
@@ -9,6 +11,8 @@ class User(AbstractUser):
         PARENT = 2
         PUPIL = 3
 
+    first_name = models.CharField("First name", max_length=150)
+    last_name = models.CharField("Last name", max_length=150)
     userType = models.PositiveSmallIntegerField(choices=UserTypeChoices.choices, default=UserTypeChoices.ADMIN)
 
     @property
@@ -20,7 +24,7 @@ class Pupil(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, limit_choices_to={
         'userType': User.UserTypeChoices.PUPIL
     })
-    class_name = models.CharField(max_length=10)
+    class_name = models.ForeignKey(ClassName, on_delete=models.RESTRICT)
 
     def __str__(self):
         return f'{self.user.full_name}, {self.class_name}'

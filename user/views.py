@@ -7,8 +7,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from user.models import Pupil
-from user.serializers import PupilsSerializer, LoginSerializer, UserSerializer, PupilCreateSerializer
+from user.models import Pupil, User
+from user.serializers import PupilsSerializer, LoginSerializer, UserSerializer, PupilCreateSerializer, \
+    TeachersSerializer, TeacherCreateSerializer
 
 
 class LoginView(APIView):
@@ -44,10 +45,23 @@ class UserView(RetrieveAPIView):
         return self.request.user
 
 
+class TeachersView(ListAPIView):
+    serializer_class = TeachersSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ['first_name', 'last_name']
+
+    def get_queryset(self):
+        return User.objects.filter(userType=User.UserTypeChoices.TEACHER)
+
+
+class TeacherCreateView(CreateAPIView):
+    serializer_class = TeacherCreateSerializer
+
+
 class PupilsView(ListAPIView):
     serializer_class = PupilsSerializer
     filter_backends = [SearchFilter]
-    search_fields = ['user__first_name', 'user__last_name']
+    search_fields = ['user__first_name', 'user__last_name', 'user__username']
 
     def get_queryset(self):
         return Pupil.objects.prefetch_related('user')
