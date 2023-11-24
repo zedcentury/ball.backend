@@ -4,6 +4,8 @@ from common.models import ClassName
 
 
 class ClassNamesSerializer(serializers.ModelSerializer):
+    pupils_count = serializers.IntegerField()
+
     class Meta:
         model = ClassName
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'pupils_count']

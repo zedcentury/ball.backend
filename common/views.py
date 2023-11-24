@@ -1,3 +1,4 @@
+from django.db.models import Count
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,8 +10,12 @@ from user.models import User, Pupil
 
 class ClassNamesView(ListAPIView):
     serializer_class = ClassNamesSerializer
-    queryset = ClassName.objects.all()
     pagination_class = None
+
+    def get_queryset(self):
+        return ClassName.objects.prefetch_related('pupil_to_class_name').annotate(
+            pupils_count=Count('pupil_to_class_name', distinct=True)
+        )
 
 
 class StatView(APIView):

@@ -23,8 +23,8 @@ class User(AbstractUser):
 class Pupil(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, limit_choices_to={
         'userType': User.UserTypeChoices.PUPIL
-    })
-    class_name = models.ForeignKey(ClassName, on_delete=models.RESTRICT)
+    }, related_name='pupil_to_user')
+    class_name = models.ForeignKey(ClassName, on_delete=models.RESTRICT, related_name='pupil_to_class_name')
 
     def __str__(self):
         return f'{self.user.full_name}, {self.class_name}'

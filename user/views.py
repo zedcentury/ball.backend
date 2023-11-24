@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
@@ -60,8 +61,10 @@ class TeacherCreateView(CreateAPIView):
 
 class PupilsView(ListAPIView):
     serializer_class = PupilsSerializer
-    filter_backends = [SearchFilter]
+    filter_backends = [SearchFilter, DjangoFilterBackend]
     search_fields = ['user__first_name', 'user__last_name', 'user__username']
+    filterset_fields = ['class_name_id']
+    pagination_class = None
 
     def get_queryset(self):
         return Pupil.objects.prefetch_related('user')
