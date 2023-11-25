@@ -1,21 +1,9 @@
 from django.db import transaction
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 
 from common.models import ClassName
 from user.models import Pupil, User
-
-
-class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=50)
-    password = serializers.CharField(max_length=50)
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'full_name', 'userType']
 
 
 class TeachersSerializer(serializers.ModelSerializer):
@@ -28,17 +16,27 @@ class TeacherCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'first_name', 'last_name', 'username']
-        extra_kwargs = {
-            'first_name': {
-                'required': True
-            },
-            'last_name': {
-                'required': True
-            }
-        }
 
     def create(self, validated_data):
         validated_data['userType'] = User.UserTypeChoices.TEACHER
+        validated_data['password'] = '1'
+        user = User.objects.create_user(**validated_data)
+        return user
+
+
+class ParentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'full_name']
+
+
+class ParentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'username']
+
+    def create(self, validated_data):
+        validated_data['userType'] = User.UserTypeChoices.PARENT
         validated_data['password'] = '1'
         user = User.objects.create_user(**validated_data)
         return user

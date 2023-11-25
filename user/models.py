@@ -21,10 +21,17 @@ class User(AbstractUser):
 
 
 class Pupil(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, limit_choices_to={
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='pupil_to_user', limit_choices_to={
         'userType': User.UserTypeChoices.PUPIL
-    }, related_name='pupil_to_user')
-    class_name = models.ForeignKey(ClassName, on_delete=models.RESTRICT, related_name='pupil_to_class_name')
+    })
+    class_name = models.OneToOneField(ClassName, on_delete=models.RESTRICT, related_name='pupil_to_class_name')
 
     def __str__(self):
         return f'{self.user.full_name}, {self.class_name}'
+
+
+class Parent(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='parent_to_user', limit_choices_to={
+        'userType': User.UserTypeChoices.PARENT
+    })
+    children = models.ManyToManyField(Pupil)

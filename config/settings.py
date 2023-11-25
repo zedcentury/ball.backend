@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'django_filters',
     'user',
     'ball',
-    'common'
+    'common',
+    'account'
 ]
 
 MIDDLEWARE = [
