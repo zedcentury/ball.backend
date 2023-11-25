@@ -13,9 +13,19 @@ class TeachersSerializer(serializers.ModelSerializer):
 
 
 class TeacherCreateSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(max_length=50, read_only=True)
+
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'username']
+        fields = ['id', 'full_name', 'first_name', 'last_name', 'username']
+        extra_kwargs = {
+            'first_name': {
+                'write_only': True
+            },
+            'last_name': {
+                'write_only': True
+            }
+        }
 
     def create(self, validated_data):
         validated_data['userType'] = User.UserTypeChoices.TEACHER
