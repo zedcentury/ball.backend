@@ -9,3 +9,9 @@ class ClassNamesSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClassName
         fields = ['id', 'name', 'pupils_count']
+
+
+class ClassNameCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClassName
+        fields = ['name']

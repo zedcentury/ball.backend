@@ -1,15 +1,12 @@
 import datetime
 
-from django.db.models import Sum, Q
 from rest_framework.generics import CreateAPIView, ListAPIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ball.models import Ball, Reason, BallStat
-from ball.serializers import BallCreateSerializer, ReasonsSerializer
-from config.permissions import IsStudent, IsParent, IsTeacher
-from user.models import User
+from ball.models import Reason, BallStat
+from ball.serializers import BallCreateSerializer, ReasonsSerializer, ReasonCreateSerializer
+from user.models import Pupil
 
 
 class ReasonsView(ListAPIView):
@@ -18,6 +15,11 @@ class ReasonsView(ListAPIView):
     """
     serializer_class = ReasonsSerializer
     queryset = Reason.objects.all()
+    pagination_class = None
+
+
+class ReasonCreateView(CreateAPIView):
+    serializer_class = ReasonCreateSerializer
 
 
 class BallView(APIView):
@@ -26,12 +28,12 @@ class BallView(APIView):
     """
 
     def get(self, request):
+        print(Pupil.objects.filter(user=request.user))
+        pupil = Pupil.objects.filter(user=request.user).first()
         today = datetime.datetime.now()
-        today_ball_stat = BallStat.objects.filter(user=request.user, createdAt=today.date()).first()
-
+        today_ball_stat = BallStat.objects.filter(pupil=pupil, createdAt=today.date()).first()
         if today_ball_stat is None:
             return Response({'today': 100})
-
         return Response({'today': today_ball_stat.score + 100})
 
 
@@ -42,6 +44,7 @@ class BallStatsView(APIView):
 
     def get(self, request):
         user = request.user
+        pupil = Pupil.objects.filter(user=request.user).first()
         today = datetime.datetime.now()
 
         start_date = today.date() - datetime.timedelta(days=7)
@@ -50,7 +53,7 @@ class BallStatsView(APIView):
         if user.date_joined.date() > start_date:
             start_date = user.date_joined.date()
 
-        last_week_ball_stats = BallStat.objects.filter(user=user, createdAt__gte=start_date, createdAt__lte=end_date)
+        last_week_ball_stats = BallStat.objects.filter(pupil=pupil, createdAt__gte=start_date, createdAt__lte=end_date)
 
         scores = []
         difference = (end_date - start_date).days + 1
