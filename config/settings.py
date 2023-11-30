@@ -40,9 +40,9 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'user',
-    'ball',
     'common',
-    'account'
+    'account',
+    'score'
 ]
 
 MIDDLEWARE = [

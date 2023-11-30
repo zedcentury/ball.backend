@@ -1,13 +1,11 @@
-import time
-
 from django.db.models import Count
-from rest_framework.generics import ListAPIView, CreateAPIView
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ball.models import Reason
 from common.models import ClassName
 from common.serializers import ClassNamesSerializer, ClassNameCreateSerializer
+from score.models import Reason
 from user.models import User, Pupil
 from user.views import BaseCreateView
 
@@ -29,7 +27,6 @@ class ClassNameCreateView(BaseCreateView):
 
 class StatView(APIView):
     def get(self, request):
-        admins_count = User.objects.filter(userType=User.UserTypeChoices.ADMIN).count()
         teachers_count = User.objects.filter(userType=User.UserTypeChoices.TEACHER).count()
         parents_count = User.objects.filter(userType=User.UserTypeChoices.PARENT).count()
         pupils_count = Pupil.objects.count()
@@ -37,7 +34,6 @@ class StatView(APIView):
         reasons_count = Reason.objects.count()
 
         return Response({
-            'admins': admins_count,
             'teachers': teachers_count,
             'parents': parents_count,
             'pupils': pupils_count,

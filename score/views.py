@@ -4,27 +4,27 @@ from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ball.models import Reason, BallStat
-from ball.serializers import BallCreateSerializer, ReasonsSerializer, ReasonCreateSerializer
+from score.serializers import ScoreCreateSerializer, ReasonListSerializer, ReasonCreateSerializer
+from score.models import ScoreStat, Reason
 from user.models import Pupil
 from user.views import BaseCreateView
 
 
-class ReasonsView(ListAPIView):
+class ReasonListView(ListAPIView):
     """
     Holatlar ro'yxati
     """
-    serializer_class = ReasonsSerializer
+    serializer_class = ReasonListSerializer
     queryset = Reason.objects.all()
     pagination_class = None
 
 
 class ReasonCreateView(BaseCreateView):
     create_serializer_class = ReasonCreateSerializer
-    retrieve_serializer_class = ReasonsSerializer
+    retrieve_serializer_class = ReasonListSerializer
 
 
-class BallView(APIView):
+class ScoreView(APIView):
     """
     Har bir o'quvchi uchun shu kuni to'plagan umumiy ball
     """
@@ -32,10 +32,10 @@ class BallView(APIView):
     def get(self, request):
         pupil = Pupil.objects.filter(user=request.user).first()
         today = datetime.datetime.now()
-        today_ball_stat = BallStat.objects.filter(pupil=pupil, createdAt=today.date()).first()
+        today_ball_stat = ScoreStat.objects.filter(pupil=pupil, created_at=today.date()).first()
         if today_ball_stat is None:
             return Response({'today': 100})
-        return Response({'today': today_ball_stat.score + 100})
+        return Response({'today': today_ball_stat.ball + 100})
 
 
 class GoalsView(APIView):
@@ -44,7 +44,7 @@ class GoalsView(APIView):
         date_joined = user.date_joined.date()
         date_today = datetime.datetime.now().date()
         difference_days = (date_today - date_joined).days
-        ball_stats = BallStat.objects.filter(pupil__user=user)
+        score_stats = ScoreStat.objects.filter(pupil__user=user)
         goals = {
             'excellent': 0,
             'good': 0,
@@ -54,10 +54,10 @@ class GoalsView(APIView):
         initial_date = date_joined
         for _ in range(difference_days):
             try:
-                if ball_stats[index].createdAt == initial_date:
-                    if ball_stats[index].score + 100 > 80:
+                if score_stats[index].createdAt == initial_date:
+                    if score_stats[index].ball + 100 > 80:
                         goals['excellent'] += 1
-                    elif ball_stats[index].score + 100 > 60:
+                    elif score_stats[index].ball + 100 > 60:
                         goals['good'] += 1
                     else:
                         goals['bad'] += 1
@@ -70,7 +70,7 @@ class GoalsView(APIView):
         return Response({'goals': goals})
 
 
-class BallStatsView(APIView):
+class ScoreStatsView(APIView):
     """
     Oxirgi 7kun natijalari
     """
@@ -86,15 +86,16 @@ class BallStatsView(APIView):
         if user.date_joined.date() > start_date:
             start_date = user.date_joined.date()
 
-        last_week_ball_stats = BallStat.objects.filter(pupil=pupil, createdAt__gte=start_date, createdAt__lte=end_date)
+        last_week_score_stats = ScoreStat.objects.filter(pupil=pupil, createdAt__gte=start_date,
+                                                         created_at__lte=end_date)
 
         scores = []
         difference = (end_date - start_date).days + 1
 
         for _ in range(difference):
-            for stat in last_week_ball_stats:
-                if stat.createdAt == end_date:
-                    scores.append(stat.score)
+            for stat in last_week_score_stats:
+                if stat.created_at == end_date:
+                    scores.append(stat.ball)
                     break
             else:
                 scores.append(0)
@@ -106,9 +107,8 @@ class BallStatsView(APIView):
         return Response({'scores': scores})
 
 
-class BallCreateView(CreateAPIView):
+class ScoreCreateView(CreateAPIView):
     """
     O'qituvchi tomonidan ball berish
     """
-    # permission_classes = [IsTeacher]
-    serializer_class = BallCreateSerializer
+    serializer_class = ScoreCreateSerializer
