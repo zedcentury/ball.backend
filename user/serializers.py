@@ -13,19 +13,9 @@ class TeachersSerializer(serializers.ModelSerializer):
 
 
 class TeacherCreateSerializer(serializers.ModelSerializer):
-    full_name = serializers.CharField(max_length=50, read_only=True)
-
     class Meta:
         model = User
-        fields = ['id', 'full_name', 'first_name', 'last_name', 'username']
-        extra_kwargs = {
-            'first_name': {
-                'write_only': True
-            },
-            'last_name': {
-                'write_only': True
-            }
-        }
+        fields = ['id', 'first_name', 'last_name', 'username']
 
     def create(self, validated_data):
         validated_data['userType'] = User.UserTypeChoices.TEACHER
@@ -63,23 +53,21 @@ class PupilsSerializer(serializers.ModelSerializer):
 
 
 class PupilCreateSerializer(serializers.ModelSerializer):
-    class_name = serializers.IntegerField(write_only=True)
+    username = serializers.CharField(max_length=50, write_only=True)
+    first_name = serializers.CharField(max_length=50, write_only=True)
+    last_name = serializers.CharField(max_length=50, write_only=True)
 
     class Meta:
-        model = User
+        model = Pupil
         fields = ['username', 'first_name', 'last_name', 'class_name']
 
     @transaction.atomic
     def create(self, validated_data):
-        print(validated_data)
         class_name = validated_data.pop('class_name')
 
         validated_data['userType'] = User.UserTypeChoices.PUPIL
         validated_data['password'] = '1'
 
         user = User.objects.create_user(**validated_data)
-
-        class_name_obj = get_object_or_404(ClassName.objects.all(), id=class_name)
-        Pupil.objects.create(user=user, class_name=class_name_obj)
-
-        return user
+        pupil = Pupil.objects.create(user=user, class_name=class_name)
+        return pupil

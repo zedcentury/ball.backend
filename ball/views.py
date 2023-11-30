@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from ball.models import Reason, BallStat
 from ball.serializers import BallCreateSerializer, ReasonsSerializer, ReasonCreateSerializer
 from user.models import Pupil
+from user.views import BaseCreateView
 
 
 class ReasonsView(ListAPIView):
@@ -18,8 +19,9 @@ class ReasonsView(ListAPIView):
     pagination_class = None
 
 
-class ReasonCreateView(CreateAPIView):
-    serializer_class = ReasonCreateSerializer
+class ReasonCreateView(BaseCreateView):
+    create_serializer_class = ReasonCreateSerializer
+    retrieve_serializer_class = ReasonsSerializer
 
 
 class BallView(APIView):

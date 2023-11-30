@@ -4,7 +4,7 @@ from common.models import ClassName
 
 
 class ClassNamesSerializer(serializers.ModelSerializer):
-    pupils_count = serializers.IntegerField()
+    pupils_count = serializers.IntegerField(default=0)
 
     class Meta:
         model = ClassName
@@ -14,4 +14,4 @@ class ClassNamesSerializer(serializers.ModelSerializer):
 class ClassNameCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClassName
-        fields = ['name']
+        fields = ['id', 'name']

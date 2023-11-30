@@ -9,6 +9,7 @@ from ball.models import Reason
 from common.models import ClassName
 from common.serializers import ClassNamesSerializer, ClassNameCreateSerializer
 from user.models import User, Pupil
+from user.views import BaseCreateView
 
 
 class ClassNamesView(ListAPIView):
@@ -18,11 +19,12 @@ class ClassNamesView(ListAPIView):
     def get_queryset(self):
         return ClassName.objects.prefetch_related('pupil_to_class_name').annotate(
             pupils_count=Count('pupil_to_class_name', distinct=True)
-        )
+        ).order_by('name')
 
 
-class ClassNameCreateView(CreateAPIView):
-    serializer_class = ClassNameCreateSerializer
+class ClassNameCreateView(BaseCreateView):
+    create_serializer_class = ClassNameCreateSerializer
+    retrieve_serializer_class = ClassNamesSerializer
 
 
 class StatView(APIView):

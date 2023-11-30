@@ -9,7 +9,7 @@ class Reason(models.Model):
     text - holat matni (kitob o'qidi, darsga sababsiz kelmadi)
     score - holat yuzasidan beriladigan ballar (30, -10)
     """
-    text = models.CharField(max_length=50)
+    text = models.CharField(max_length=50, unique=True)
     score = models.IntegerField()
 
     def __str__(self):
