@@ -30,13 +30,44 @@ class BallView(APIView):
     """
 
     def get(self, request):
-        print(Pupil.objects.filter(user=request.user))
         pupil = Pupil.objects.filter(user=request.user).first()
         today = datetime.datetime.now()
         today_ball_stat = BallStat.objects.filter(pupil=pupil, createdAt=today.date()).first()
         if today_ball_stat is None:
             return Response({'today': 100})
         return Response({'today': today_ball_stat.score + 100})
+
+
+class GoalsView(APIView):
+    def get(self, request):
+        user = request.user
+        date_joined = user.date_joined.date()
+        date_today = datetime.datetime.now().date()
+        difference_days = (date_today - date_joined).days
+        ball_stats = BallStat.objects.filter(pupil__user=user)
+        goals = {
+            'excellent': 0,
+            'good': 0,
+            'bad': 0
+        }
+        index = 0
+        initial_date = date_joined
+        for _ in range(difference_days):
+            try:
+                if ball_stats[index].createdAt == initial_date:
+                    if ball_stats[index].score + 100 > 80:
+                        goals['excellent'] += 1
+                    elif ball_stats[index].score + 100 > 60:
+                        goals['good'] += 1
+                    else:
+                        goals['bad'] += 1
+                    index += 1
+                else:
+                    goals['excellent'] += 1
+            except IndexError as e:
+                goals['excellent'] += 1
+            initial_date += datetime.timedelta(days=1)
+        return Response({'goals': goals})
 
 
 class BallStatsView(APIView):
