@@ -1,3 +1,5 @@
+import time
+
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.filters import SearchFilter
@@ -57,9 +59,9 @@ class PupilsView(ListAPIView):
     filter_backends = [SearchFilter, DjangoFilterBackend]
     search_fields = ['user__first_name', 'user__last_name', 'user__username']
     filterset_fields = ['class_name_id']
-    pagination_class = None
 
     def get_queryset(self):
+        time.sleep(3)
         return Pupil.objects.prefetch_related('user')
 
 
