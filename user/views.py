@@ -1,5 +1,7 @@
-import time
+import datetime
 
+from django.db.models import Subquery, OuterRef, F
+from django.db.models.functions import Coalesce
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.filters import SearchFilter
@@ -7,7 +9,10 @@ from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from user.models import Pupil, User
+from config.mixins import PaginationMixin
+from score.models import ScoreStat
+from user.filters import PupilFilter
+from user.models import Pupil, Parent, Teacher
 from user.serializers import PupilsSerializer, PupilCreateSerializer, \
     TeachersSerializer, TeacherCreateSerializer, ParentsSerializer, \
     ParentCreateSerializer
@@ -29,10 +34,10 @@ class BaseCreateView(APIView):
 class TeachersView(ListAPIView):
     serializer_class = TeachersSerializer
     filter_backends = [SearchFilter]
-    search_fields = ['first_name', 'last_name', 'username']
+    search_fields = ['user__first_name', 'user__last_name', 'user__username']
 
     def get_queryset(self):
-        return User.objects.filter(userType=User.UserTypeChoices.TEACHER)
+        return Teacher.objects.prefetch_related('user')
 
 
 class TeacherCreateView(BaseCreateView):
@@ -43,10 +48,10 @@ class TeacherCreateView(BaseCreateView):
 class ParentsView(ListAPIView):
     serializer_class = ParentsSerializer
     filter_backends = [SearchFilter]
-    search_fields = ['first_name', 'last_name', 'username']
+    search_fields = ['user__first_name', 'user__last_name', 'user__username']
 
     def get_queryset(self):
-        return User.objects.filter(userType=User.UserTypeChoices.PARENT)
+        return Parent.objects.prefetch_related('user')
 
 
 class ParentCreateView(BaseCreateView):
@@ -54,15 +59,24 @@ class ParentCreateView(BaseCreateView):
     retrieve_serializer_class = ParentsSerializer
 
 
-class PupilsView(ListAPIView):
+class PupilsView(PaginationMixin, ListAPIView):
     serializer_class = PupilsSerializer
     filter_backends = [SearchFilter, DjangoFilterBackend]
     search_fields = ['user__first_name', 'user__last_name', 'user__username']
-    filterset_fields = ['class_name_id']
+    filterset_class = PupilFilter
 
     def get_queryset(self):
-        time.sleep(3)
-        return Pupil.objects.prefetch_related('user')
+        return Pupil.objects.prefetch_related('user').annotate(
+            latest_ball=Coalesce(
+                Subquery(ScoreStat.objects.filter(
+                    pupil=OuterRef('pk'),
+                    created_at=datetime.datetime.now().date()
+                ).order_by('-created_at').values('ball')[:1]),
+                0
+            )
+        ).annotate(
+            today_ball=F('latest_ball') + 100
+        )
 
 
 class PupilCreateView(BaseCreateView):

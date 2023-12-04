@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from common.models import ClassName
 from common.serializers import ClassNamesSerializer, ClassNameCreateSerializer
 from score.models import Reason
-from user.models import User, Pupil
+from user.models import User, Pupil, Parent
 from user.views import BaseCreateView
 
 
@@ -28,7 +28,7 @@ class ClassNameCreateView(BaseCreateView):
 class StatView(APIView):
     def get(self, request):
         teachers_count = User.objects.filter(userType=User.UserTypeChoices.TEACHER).count()
-        parents_count = User.objects.filter(userType=User.UserTypeChoices.PARENT).count()
+        parents_count = Parent.objects.count()
         pupils_count = Pupil.objects.count()
         class_names_count = ClassName.objects.count()
         reasons_count = Reason.objects.count()

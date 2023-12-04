@@ -1,22 +1,22 @@
 import datetime
 
-from rest_framework.generics import CreateAPIView, ListAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from config.mixins import PaginationMixin
 from score.serializers import ScoreCreateSerializer, ReasonListSerializer, ReasonCreateSerializer
 from score.models import ScoreStat, Reason
-from user.models import Pupil
+from user.models import Pupil, User
 from user.views import BaseCreateView
 
 
-class ReasonListView(ListAPIView):
+class ReasonListView(PaginationMixin, ListAPIView):
     """
     Holatlar ro'yxati
     """
     serializer_class = ReasonListSerializer
     queryset = Reason.objects.all()
-    pagination_class = None
 
 
 class ReasonCreateView(BaseCreateView):
@@ -29,8 +29,8 @@ class ScoreView(APIView):
     Har bir o'quvchi uchun shu kuni to'plagan umumiy ball
     """
 
-    def get(self, request):
-        pupil = Pupil.objects.filter(user=request.user).first()
+    def get(self, request, user_id):
+        pupil = Pupil.objects.filter(user_id=user_id).first()
         today = datetime.datetime.now()
         today_ball_stat = ScoreStat.objects.filter(pupil=pupil, created_at=today.date()).first()
         if today_ball_stat is None:
@@ -39,8 +39,8 @@ class ScoreView(APIView):
 
 
 class GoalsView(APIView):
-    def get(self, request):
-        user = request.user
+    def get(self, request, user_id):
+        user = get_object_or_404(User.objects.all(), id=user_id)
         date_joined = user.date_joined.date()
         date_today = datetime.datetime.now().date()
         difference_days = (date_today - date_joined).days
@@ -54,7 +54,7 @@ class GoalsView(APIView):
         initial_date = date_joined
         for _ in range(difference_days):
             try:
-                if score_stats[index].createdAt == initial_date:
+                if score_stats[index].created_at == initial_date:
                     if score_stats[index].ball + 100 > 80:
                         goals['excellent'] += 1
                     elif score_stats[index].ball + 100 > 60:
@@ -75,9 +75,9 @@ class ScoreStatsView(APIView):
     Oxirgi 7kun natijalari
     """
 
-    def get(self, request):
-        user = request.user
-        pupil = Pupil.objects.filter(user=request.user).first()
+    def get(self, request, user_id):
+        user = get_object_or_404(User.objects.all(), id=user_id)
+        pupil = Pupil.objects.filter(user=user).first()
         today = datetime.datetime.now()
 
         start_date = today.date() - datetime.timedelta(days=7)
@@ -86,7 +86,7 @@ class ScoreStatsView(APIView):
         if user.date_joined.date() > start_date:
             start_date = user.date_joined.date()
 
-        last_week_score_stats = ScoreStat.objects.filter(pupil=pupil, createdAt__gte=start_date,
+        last_week_score_stats = ScoreStat.objects.filter(pupil=pupil, created_at__gte=start_date,
                                                          created_at__lte=end_date)
 
         scores = []

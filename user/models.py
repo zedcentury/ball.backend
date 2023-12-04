@@ -34,4 +34,17 @@ class Parent(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='parent_to_user', limit_choices_to={
         'userType': User.UserTypeChoices.PARENT
     })
-    children = models.ManyToManyField(Pupil)
+    children = models.ManyToManyField(Pupil, related_name='parent_to_pupil')
+
+    def __str__(self):
+        return self.user.full_name
+
+
+class Teacher(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='teacher_to_user', limit_choices_to={
+        'userType': User.UserTypeChoices.TEACHER
+    })
+    pupils = models.ManyToManyField(Pupil)
+
+    def __str__(self):
+        return self.user.full_name

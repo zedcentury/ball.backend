@@ -23,18 +23,18 @@ class Score(models.Model):
     Har bir o'quvchiga berilgan ballar ro'yxati
     user - o'quvchi
     reason - holat (sabab)
-    score - berilgan ball (20, -12)
+    ball - berilgan ball (20, -12)
     created_at - ball berilgan vaqt
     """
     pupil = models.ForeignKey(Pupil, on_delete=models.CASCADE, related_name='ball_to_pupil')
     reason = models.CharField(max_length=100, default=None, null=True, blank=True)
-    score = models.IntegerField()
+    ball = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        if self.score > 0:
-            return f'{self.pupil.user.full_name} (+{self.score})'
-        return f'{self.pupil.user.full_name} ({self.score})'
+        if self.ball > 0:
+            return f'{self.pupil.user.full_name} (+{self.ball})'
+        return f'{self.pupil.user.full_name} ({self.ball})'
 
 
 class ScoreStat(models.Model):
