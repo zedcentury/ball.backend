@@ -1,12 +1,13 @@
 from django.urls import path
 
-from score.views import ReasonListView, ReasonCreateView, ScoreView, GoalsView, ScoreStatsView, ScoreCreateView
+from score.views import ReasonListView, ReasonCreateView, ScoreTodayView, ScoreStatView, ScoreDailyListView, \
+    ScoreCreateView
 
 urlpatterns = [
     path('reason/list/', ReasonListView.as_view(), name='reason-list'),
     path('reason/create/', ReasonCreateView.as_view(), name='reason-create'),
-    path('score/<int:user_id>/', ScoreView.as_view(), name='score'),
-    path('goals/<int:user_id>/', GoalsView.as_view(), name='goals'),
-    path('score/stats/<int:user_id>/', ScoreStatsView.as_view(), name='score-stats'),
+    path('score/today/<int:user_id>/', ScoreTodayView.as_view(), name='score'),
+    path('score/stat/<int:user_id>/', ScoreStatView.as_view(), name='score-stat'),
+    path('score/daily/list/<int:user_id>/', ScoreDailyListView.as_view(), name='score-stats'),
     path('score/create/', ScoreCreateView.as_view(), name='score-create')
 ]

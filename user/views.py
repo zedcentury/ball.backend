@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from config.mixins import PaginationMixin
-from score.models import ScoreStat
+from score.models import ScoreDaily
 from user.filters import PupilFilter
 from user.models import Pupil, Parent, Teacher
 from user.serializers import PupilsSerializer, PupilCreateSerializer, \
@@ -68,7 +68,7 @@ class PupilsView(PaginationMixin, ListAPIView):
     def get_queryset(self):
         return Pupil.objects.prefetch_related('user').annotate(
             latest_ball=Coalesce(
-                Subquery(ScoreStat.objects.filter(
+                Subquery(ScoreDaily.objects.filter(
                     pupil=OuterRef('pk'),
                     created_at=datetime.datetime.now().date()
                 ).order_by('-created_at').values('ball')[:1]),

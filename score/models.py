@@ -7,7 +7,7 @@ class Reason(models.Model):
     """
     Turli xil holatlar uchun turli xil ballar
     text - holat matni (kitob o'qidi, darsga sababsiz kelmadi)
-    score - holat yuzasidan beriladigan ballar (30, -10)
+    ball - holat yuzasidan beriladigan ballar (30, -10)
     """
     text = models.CharField(max_length=50, unique=True)
     ball = models.IntegerField()
@@ -21,7 +21,7 @@ class Reason(models.Model):
 class Score(models.Model):
     """
     Har bir o'quvchiga berilgan ballar ro'yxati
-    user - o'quvchi
+    pupil - o'quvchi
     reason - holat (sabab)
     ball - berilgan ball (20, -12)
     created_at - ball berilgan vaqt
@@ -37,10 +37,29 @@ class Score(models.Model):
         return f'{self.pupil.user.full_name} ({self.ball})'
 
 
-class ScoreStat(models.Model):
-    pupil = models.ForeignKey(Pupil, on_delete=models.CASCADE, related_name='score_stat_to_pupil')
+class ScoreDaily(models.Model):
+    """
+    Har bir foydalanuvchining har kungi umumiy ballari
+    pupil - o'quvchi
+    ball - joriy kunda to'plagan umumiy balli
+    """
+    pupil = models.ForeignKey(Pupil, on_delete=models.CASCADE, related_name='score_daily_to_pupil')
     ball = models.IntegerField()
     created_at = models.DateField(auto_now_add=True)
 
     def __str__(self):
         return f'{self.pupil.user.full_name} ({self.ball}, {self.created_at})'
+
+
+class ScoreStat(models.Model):
+    """
+    Har bir foydalanuvchining to'plagan ballari bo'yicha statistika
+    excellent (81-100 ball)
+    good (61-80 ball)
+    bad (0-60)
+    """
+    pupil = models.ForeignKey(Pupil, on_delete=models.CASCADE, related_name='score_stat_to_pupil')
+    excellent = models.PositiveIntegerField(default=0)
+    good = models.PositiveIntegerField(default=0)
+    bad = models.PositiveIntegerField(default=0)
+    updated_at = models.DateField(auto_now=True)

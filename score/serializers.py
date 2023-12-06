@@ -1,7 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from score.models import ScoreStat, Score, Reason
+from score.models import ScoreDaily, Score, Reason, ScoreStat
 
 
 class ReasonListSerializer(serializers.ModelSerializer):
@@ -34,10 +34,16 @@ class ScoreCreateSerializer(serializers.ModelSerializer):
         score = super().create(validated_data)
         pupil = score.pupil
         ball = score.ball
-        score_stat: ScoreStat = ScoreStat.objects.filter(pupil=pupil, created_at=score.created_at).first()
-        if score_stat:
-            score_stat.ball += ball
-            score_stat.save()
+        score_daily: ScoreDaily = ScoreDaily.objects.filter(pupil=pupil, created_at=score.created_at).first()
+        if score_daily:
+            score_daily.ball += ball
+            score_daily.save()
         else:
-            ScoreStat.objects.create(pupil=pupil, ball=ball)
+            ScoreDaily.objects.create(pupil=pupil, ball=ball)
         return score
+
+
+class ScoreStatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScoreStat
+        fields = ['excellent', 'good', 'bad']

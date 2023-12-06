@@ -1,11 +1,12 @@
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import password_changed
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from account.serializers import LoginSerializer, UserSerializer
+from account.serializers import LoginSerializer, UserSerializer, ChangePasswordSerializer
 
 
 # Create your views here.
@@ -40,3 +41,23 @@ class UserView(RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class ChangePasswordView(UpdateAPIView):
+    """
+    Foydalanuvchi parolini o'zgartirishi
+    """
+    # permission_classes = [IsAuthenticated]
+    serializer_class = ChangePasswordSerializer
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(data=request.data, context={'user': user})
+        serializer.is_valid(raise_exception=True)
+        user.set_password(serializer.validated_data.get('new_password'))
+        user.save()
+        password_changed(serializer.validated_data.get('new_password'), request.user)
+        return Response({})
