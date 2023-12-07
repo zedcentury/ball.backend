@@ -1,5 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+
 from user.models import Pupil, User, Parent, Teacher
 
 
@@ -20,6 +22,11 @@ class TeacherCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = ['id', 'first_name', 'last_name', 'username']
+
+    def validate(self, attrs):
+        if User.objects.filter(username=attrs.get('username')).exists():
+            raise ValidationError({'username': 'Username is already exist'})
+        return attrs
 
     @transaction.atomic
     def create(self, validated_data):
@@ -47,6 +54,11 @@ class ParentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Parent
         fields = ['id', 'first_name', 'last_name', 'username']
+
+    def validate(self, attrs):
+        if User.objects.filter(username=attrs.get('username')).exists():
+            raise ValidationError({'username': 'Username is already exist'})
+        return attrs
 
     @transaction.atomic
     def create(self, validated_data):
@@ -76,6 +88,11 @@ class PupilCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pupil
         fields = ['username', 'first_name', 'last_name', 'class_name']
+
+    def validate(self, attrs):
+        if User.objects.filter(username=attrs.get('username')).exists():
+            raise ValidationError({'username': 'Username is already exist'})
+        return attrs
 
     @transaction.atomic
     def create(self, validated_data):
