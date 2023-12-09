@@ -1,30 +1,49 @@
 import datetime
 
-from rest_framework.generics import CreateAPIView, ListAPIView, get_object_or_404
+from rest_framework.filters import SearchFilter
+from rest_framework.generics import CreateAPIView, ListAPIView, get_object_or_404, UpdateAPIView, DestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from config.mixins import PaginationMixin
-from score.serializers import ScoreCreateSerializer, ReasonListSerializer, ReasonCreateSerializer, ScoreStatSerializer
+from score.serializers import ScoreCreateSerializer, ReasonListSerializer, ReasonCreateSerializer, ScoreStatSerializer, \
+    ReasonUpdateSerializer
 from score.models import ScoreDaily, Reason, ScoreStat
 from user.models import Pupil, User
-from user.views import BaseCreateView
+
+
+# from user.views import MyCreateView
 
 
 class ReasonListView(PaginationMixin, ListAPIView):
     """
     Holatlar ro'yxati
     """
+    filter_backends = [SearchFilter]
+    search_fields = ['text']
     serializer_class = ReasonListSerializer
     queryset = Reason.objects.all()
 
 
-class ReasonCreateView(BaseCreateView):
+class ReasonCreateView(APIView):
     """
     Holat qo'shish
     """
-    create_serializer_class = ReasonCreateSerializer
-    retrieve_serializer_class = ReasonListSerializer
+
+    def post(self, request):
+        serializer = ReasonCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reason = serializer.save()
+        return Response(ReasonListSerializer(reason).data)
+
+
+class ReasonUpdateView(UpdateAPIView):
+    serializer_class = ReasonUpdateSerializer
+    queryset = Reason.objects.all()
+
+
+class ReasonDestroyView(DestroyAPIView):
+    queryset = Reason.objects.all()
 
 
 class ScoreTodayView(APIView):

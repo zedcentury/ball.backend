@@ -24,6 +24,15 @@ class ReasonCreateSerializer(serializers.ModelSerializer):
         fields = ['text', 'ball']
 
 
+class ReasonUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reason
+        fields = ['text', 'ball']
+
+    def validate(self, attrs):
+        return attrs
+
+
 class ScoreCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Score

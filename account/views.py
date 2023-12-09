@@ -3,6 +3,7 @@ from django.contrib.auth.password_validation import password_changed
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import RetrieveAPIView, UpdateAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -15,7 +16,7 @@ class LoginView(APIView):
     Tizimga kirish
     """
 
-    # permission_classes = [~IsAuthenticated]
+    permission_classes = [~IsAuthenticated]
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -37,6 +38,7 @@ class LoginView(APIView):
 
 
 class UserView(RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
     def get_object(self):
@@ -47,7 +49,7 @@ class ChangePasswordView(UpdateAPIView):
     """
     Foydalanuvchi parolini o'zgartirishi
     """
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     serializer_class = ChangePasswordSerializer
 
     def get_object(self):

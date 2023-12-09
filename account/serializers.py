@@ -11,7 +11,7 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'full_name', 'userType']
+        fields = ['id', 'username', 'full_name', 'user_type']
 
 
 class ChangePasswordSerializer(serializers.Serializer):

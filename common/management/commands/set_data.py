@@ -16,17 +16,17 @@ class Command(BaseCommand):
         User.objects.create_superuser(username='admin', password='1')
 
         for i in range(1, 13):
-            teacher = User.objects.create_user(username=f'teacher{i}', first_name='A', last_name='B', password='1',
-                                               userType=User.UserTypeChoices.TEACHER)
+            teacher = User.objects.create_user(username=f'teacher{i}', full_name='A B', password='1',
+                                               user_type=User.UserTypeChoices.TEACHER)
             Teacher.objects.create(user=teacher)
 
         for i in range(1, 151):
-            parent = User.objects.create_user(username=f'parent{i}', first_name='A', last_name='B', password='1',
-                                              userType=User.UserTypeChoices.PARENT)
+            parent = User.objects.create_user(username=f'parent{i}', full_name='A B', password='1',
+                                              user_type=User.UserTypeChoices.PARENT)
             parent_obj = Parent.objects.create(user=parent)
             for j in range(1, random.choice([2, 3])):
-                pupil = User.objects.create_user(username=f'pupil{i}{j}', first_name='A', last_name='B', password='1',
-                                                 userType=User.UserTypeChoices.PUPIL)
+                pupil = User.objects.create_user(username=f'pupil{i}{j}', full_name='A B', password='1',
+                                                 user_type=User.UserTypeChoices.PUPIL)
                 class_name = ClassName.objects.exclude(pupil_to_class_name__user=pupil).order_by('?').first()
                 pupil_obj = Pupil.objects.create(user=pupil, class_name=class_name)
                 parent_obj.children.add(pupil_obj)

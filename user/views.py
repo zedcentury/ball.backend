@@ -1,84 +1,39 @@
-import datetime
-
-from django.db.models import Subquery, OuterRef, F
-from django.db.models.functions import Coalesce
+from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status
 from rest_framework.filters import SearchFilter
-from rest_framework.generics import ListAPIView
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
-from config.mixins import PaginationMixin
-from score.models import ScoreDaily
-from user.filters import PupilFilter
-from user.models import Pupil, Parent, Teacher
-from user.serializers import PupilsSerializer, PupilCreateSerializer, \
-    TeachersSerializer, TeacherCreateSerializer, ParentsSerializer, \
-    ParentCreateSerializer
+from rest_framework.generics import ListAPIView, DestroyAPIView, CreateAPIView, UpdateAPIView
+from user.models import Pupil, Parent, Teacher, User
+from user.serializers import UserListSerializer, UserCreateSerializer, \
+    UserUpdateSerializer
 
 
-class BaseCreateView(APIView):
-    create_serializer_class = None
-    retrieve_serializer_class = None
-
-    def post(self, request, *args, **kwargs):
-        create_serializer = self.create_serializer_class(data=request.data)
-        if create_serializer.is_valid():
-            instance = create_serializer.save()
-            retrieve_serializer = self.retrieve_serializer_class(instance)
-            return Response(retrieve_serializer.data, status=status.HTTP_201_CREATED)
-        return Response(create_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class UserListView(ListAPIView):
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['user_type']
+    search_fields = ['full_name', 'username']
+    queryset = User.objects.all()
+    serializer_class = UserListSerializer
 
 
-class TeachersView(ListAPIView):
-    serializer_class = TeachersSerializer
-    filter_backends = [SearchFilter]
-    search_fields = ['user__first_name', 'user__last_name', 'user__username']
-
-    def get_queryset(self):
-        return Teacher.objects.prefetch_related('user')
+class UserCreateView(CreateAPIView):
+    serializer_class = UserCreateSerializer
 
 
-class TeacherCreateView(BaseCreateView):
-    create_serializer_class = TeacherCreateSerializer
-    retrieve_serializer_class = TeachersSerializer
+class UserUpdateView(UpdateAPIView):
+    serializer_class = UserUpdateSerializer
+    queryset = User.objects.all()
 
 
-class ParentsView(ListAPIView):
-    serializer_class = ParentsSerializer
-    filter_backends = [SearchFilter]
-    search_fields = ['user__first_name', 'user__last_name', 'user__username']
+class UserDestroyView(DestroyAPIView):
+    queryset = User.objects.all()
 
-    def get_queryset(self):
-        return Parent.objects.prefetch_related('user')
-
-
-class ParentCreateView(BaseCreateView):
-    create_serializer_class = ParentCreateSerializer
-    retrieve_serializer_class = ParentsSerializer
-
-
-class PupilsView(PaginationMixin, ListAPIView):
-    serializer_class = PupilsSerializer
-    filter_backends = [SearchFilter, DjangoFilterBackend]
-    search_fields = ['user__first_name', 'user__last_name', 'user__username']
-    filterset_class = PupilFilter
-
-    def get_queryset(self):
-        return Pupil.objects.prefetch_related('user').annotate(
-            latest_ball=Coalesce(
-                Subquery(ScoreDaily.objects.filter(
-                    pupil=OuterRef('pk'),
-                    created_at=datetime.datetime.now().date()
-                ).order_by('-created_at').values('ball')[:1]),
-                0
-            )
-        ).annotate(
-            today_ball=F('latest_ball') + 100
-        )
-
-
-class PupilCreateView(BaseCreateView):
-    create_serializer_class = PupilCreateSerializer
-    retrieve_serializer_class = PupilsSerializer
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        if user.user_type == User.UserTypeChoices.TEACHER:
+            Teacher.objects.filter(user=user).delete()
+        elif user.user_type == User.UserTypeChoices.PARENT:
+            Parent.objects.filter(user=user).delete()
+        elif user.user_type == User.UserTypeChoices.PUPIL:
+            Pupil.objects.filter(user=user).delete()
+        return super().destroy(request, *args, **kwargs)
