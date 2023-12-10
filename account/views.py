@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from account.serializers import LoginSerializer, UserSerializer, ChangePasswordSerializer
+from account.serializers import LoginSerializer, UserSerializer, ChangePasswordSerializer, ProfileSerializer
 
 
 # Create your views here.
@@ -63,3 +63,14 @@ class ChangePasswordView(UpdateAPIView):
         user.save()
         password_changed(serializer.validated_data.get('new_password'), request.user)
         return Response({})
+
+
+class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        obj = self.request.user
+        serializer = ProfileSerializer(obj, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return Response(UserSerializer(instance).data)

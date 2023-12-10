@@ -40,3 +40,9 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError(errors)
 
         return data
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username']
