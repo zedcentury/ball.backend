@@ -105,7 +105,7 @@ class ScoreStatView(APIView):
         score_stat = ScoreStat.objects.filter(pupil=pupil).first()
         if score_stat:
             score_stat.excellent = stats['excellent']
-            score_stat.good = stats['excellent']
+            score_stat.good = stats['good']
             score_stat.bad = stats['bad']
             score_stat.save()
             return Response(ScoreStatSerializer(score_stat).data)
