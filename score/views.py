@@ -68,8 +68,8 @@ class ScoreStatView(APIView):
 
         # Agar bugun o'quvchining statiktikasi ScoreStat modelida yangilangan bo'lsa,
         # ma'lumotlar modeldan olinadi
-        score_stat: ScoreStat = ScoreStat.objects.filter(pupil=pupil, updated_at=date_today).first()
-        if score_stat:
+        score_stat = ScoreStat.objects.filter(pupil=pupil, updated_at=date_today).first()
+        if score_stat is not None:
             return Response(ScoreStatSerializer(score_stat).data)
 
         date_joined = pupil.user.date_joined.date()

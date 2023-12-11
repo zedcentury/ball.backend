@@ -13,7 +13,7 @@ class User(AbstractUser):
 
     first_name = None
     last_name = None
-    full_name = models.CharField("Full name", max_length=150)
+    full_name = models.CharField('Full name', max_length=150)
     user_type = models.PositiveSmallIntegerField(choices=UserTypeChoices.choices, default=UserTypeChoices.ADMIN)
 
 
