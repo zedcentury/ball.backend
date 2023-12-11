@@ -1,7 +1,8 @@
 from django.urls import path, include
 
 from user.views import UserListView, UserCreateView, UserUpdateView, \
-    UserDestroyView
+    UserDestroyView, AttachParentToPupilView, AttachClassNameToPupilView, CancelAttachClassNameView, \
+    CancelAttachParentView
 
 urlpatterns = [
     path('user/', include([
@@ -10,4 +11,9 @@ urlpatterns = [
         path('update/<int:pk>/', UserUpdateView.as_view(), name='user-update'),
         path('destroy/<int:pk>/', UserDestroyView.as_view(), name='user-destroy'),
     ])),
+    path('attach/parent-to-pupil/', AttachParentToPupilView.as_view(), name='attach-parent-to-pupil'),
+    path('attach/class-name-to-pupil/', AttachClassNameToPupilView.as_view(), name='attach-class-name-to-pupil'),
+    path('cancel-attach/class-name/<int:pk>/', CancelAttachClassNameView.as_view(), name='cancel-attach-class-name'),
+    path('cancel-attach/parent/<int:parent>/<int:pupil>/', CancelAttachParentView.as_view(),
+         name='cancel-attach-parent')
 ]

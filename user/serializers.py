@@ -39,3 +39,13 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'full_name']
+
+
+class AttachParentToPupilSerializer(serializers.Serializer):
+    parent = serializers.IntegerField()
+    pupil = serializers.IntegerField()
+
+
+class AttachClassNameToPupilSerializer(serializers.Serializer):
+    class_name = serializers.IntegerField()
+    pupil = serializers.IntegerField()
