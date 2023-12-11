@@ -1,7 +1,9 @@
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.generics import get_object_or_404
 
 from score.models import ScoreDaily, Score, Reason, ScoreStat
+from user.models import Pupil
 
 
 class ReasonListSerializer(serializers.ModelSerializer):
@@ -40,8 +42,10 @@ class ScoreCreateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        pupil = validated_data.get('pupil')
+        pupil = get_object_or_404(Pupil.objects.all(), user_id=pupil.id)
+        validated_data['pupil'] = pupil
         score = super().create(validated_data)
-        pupil = score.pupil
         ball = score.ball
         score_daily: ScoreDaily = ScoreDaily.objects.filter(pupil=pupil, created_at=score.created_at).first()
         if score_daily:
