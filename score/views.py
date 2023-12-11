@@ -9,10 +9,7 @@ from config.mixins import PaginationMixin
 from score.serializers import ScoreCreateSerializer, ReasonListSerializer, ReasonCreateSerializer, ScoreStatSerializer, \
     ReasonUpdateSerializer
 from score.models import ScoreDaily, Reason, ScoreStat
-from user.models import Pupil, User
-
-
-# from user.views import MyCreateView
+from user.models import Pupil
 
 
 class ReasonListView(PaginationMixin, ListAPIView):

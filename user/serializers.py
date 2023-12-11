@@ -41,6 +41,21 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         fields = ['username', 'full_name']
 
 
+class UserRetrieveSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['full_name']
+
+
+class ChildrenSerializer(serializers.ModelSerializer):
+    class_name = serializers.CharField()
+    today_ball = serializers.IntegerField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'full_name', 'class_name', 'today_ball']
+
+
 class AttachParentToPupilSerializer(serializers.Serializer):
     parent = serializers.IntegerField()
     pupil = serializers.IntegerField()

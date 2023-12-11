@@ -1,17 +1,24 @@
+import datetime
+
 from django.db import transaction
+from django.db.models import F, Subquery, OuterRef
+from django.db.models.functions import Coalesce
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.generics import ListAPIView, DestroyAPIView, CreateAPIView, UpdateAPIView, get_object_or_404
+from rest_framework.generics import ListAPIView, DestroyAPIView, CreateAPIView, UpdateAPIView, get_object_or_404, \
+    RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.models import ClassName
 from config.mixins import PaginationMixin
+from score.models import ScoreDaily
 from user.filters import UserFilter
 from user.models import Pupil, Parent, Teacher, User
 from user.serializers import UserListSerializer, UserCreateSerializer, \
-    UserUpdateSerializer, AttachParentToPupilSerializer, AttachClassNameToPupilSerializer
+    UserUpdateSerializer, AttachParentToPupilSerializer, AttachClassNameToPupilSerializer, ChildrenSerializer, \
+    UserRetrieveSerializer
 
 
 class UserListView(PaginationMixin, ListAPIView):
@@ -31,6 +38,11 @@ class UserUpdateView(UpdateAPIView):
     queryset = User.objects.all()
 
 
+class UserRetrieveView(RetrieveAPIView):
+    serializer_class = UserRetrieveSerializer
+    queryset = User.objects.all()
+
+
 class UserDestroyView(DestroyAPIView):
     queryset = User.objects.all()
 
@@ -44,6 +56,21 @@ class UserDestroyView(DestroyAPIView):
         elif user.user_type == User.UserTypeChoices.PUPIL:
             Pupil.objects.filter(user=user).delete()
         return super().destroy(request, *args, **kwargs)
+
+
+class ChildrenView(PaginationMixin, ListAPIView):
+    serializer_class = ChildrenSerializer
+
+    def get_queryset(self):
+        parent = self.request.query_params.get('parent')
+        return User.objects.filter(user_type=User.UserTypeChoices.PUPIL,
+                                   pupil_to_user__parent_to_pupil__user_id=parent). \
+            prefetch_related('pupil_to_user__class_name'). \
+            annotate(class_name=F('pupil_to_user__class_name__name')). \
+            annotate(latest_ball=Coalesce(
+            Subquery(ScoreDaily.objects.filter(pupil__user_id=OuterRef('pk'), created_at=datetime.datetime.now().date()
+                                               ).order_by('-created_at').values('ball')[:1]), 0)). \
+            annotate(today_ball=F('latest_ball') + 100)
 
 
 class AttachParentToPupilView(APIView):
