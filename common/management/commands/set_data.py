@@ -5,7 +5,7 @@ from django.contrib.auth.hashers import make_password
 from django.core.management import BaseCommand
 
 from common.models import ClassName
-from score.models import Reason, Score, ScoreDaily
+from score.models import Reason, Score, ScoreDaily, ScoreStat
 from user.models import User, Teacher, Parent, Pupil
 
 boys = ['Qodir', 'Tohir', 'Anvar', 'Jamol', 'Usmon', 'Po\'lat', 'Yo\'ldosh', 'Kamoliddin', 'Asliddin', 'Doston',
@@ -31,6 +31,16 @@ def get_full_name():
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        Score.objects.all().delete()
+        ScoreDaily.objects.all().delete()
+        ScoreStat.objects.all().delete()
+        Teacher.objects.all().delete()
+        Parent.objects.all().delete()
+        Pupil.objects.all().delete()
+        ClassName.objects.all().delete()
+        Reason.objects.all().delete()
+        User.objects.all().delete()
+
         today_datetime = datetime.datetime.now()
 
         # Classes
