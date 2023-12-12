@@ -25,8 +25,10 @@ class UserListView(PaginationMixin, ListAPIView):
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = UserFilter
     search_fields = ['full_name', 'username']
-    queryset = User.objects.all()
     serializer_class = UserListSerializer
+
+    def get_queryset(self):
+        return User.objects.order_by('full_name')
 
 
 class UserCreateView(CreateAPIView):

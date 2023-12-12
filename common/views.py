@@ -1,6 +1,8 @@
-from django.db.models import Count
+from django.db.models import Count, RestrictedError
+from rest_framework import status
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListAPIView, DestroyAPIView, CreateAPIView, UpdateAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -12,6 +14,7 @@ from user.models import User, Pupil, Parent
 
 
 class ClassNameListView(PaginationMixin, ListAPIView):
+    permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter]
     search_fields = ['name']
     serializer_class = ClassNameListSerializer
@@ -33,6 +36,12 @@ class ClassNameUpdateView(UpdateAPIView):
 
 class ClassNameDestroyView(DestroyAPIView):
     queryset = ClassName.objects.all()
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except RestrictedError as e:
+            return Response('Sinfga bog\'langan o\'quvchilar bor', status=status.HTTP_400_BAD_REQUEST)
 
 
 class StatView(APIView):

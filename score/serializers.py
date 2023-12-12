@@ -1,5 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 
 from score.models import ScoreDaily, Score, Reason, ScoreStat
@@ -25,6 +26,12 @@ class ReasonCreateSerializer(serializers.ModelSerializer):
         model = Reason
         fields = ['text', 'ball']
 
+    @staticmethod
+    def validate_ball(value):
+        if value == 0:
+            raise ValidationError('Ball 0ga teng bo\'lishi mumkin emas')
+        return value
+
 
 class ReasonUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,6 +46,12 @@ class ScoreCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Score
         fields = ['pupil', 'reason', 'ball']
+
+    @staticmethod
+    def validate_ball(value):
+        if value == 0:
+            raise ValidationError('Ball 0ga teng bo\'lishi mumkin emas')
+        return value
 
     @transaction.atomic
     def create(self, validated_data):
