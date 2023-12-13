@@ -58,7 +58,7 @@ class ScoreStat(models.Model):
     good (61-80 ball)
     bad (0-60)
     """
-    pupil = models.ForeignKey(Pupil, on_delete=models.CASCADE, related_name='score_stat_to_pupil')
+    pupil = models.OneToOneField(Pupil, on_delete=models.CASCADE, related_name='score_stat_to_pupil')
     excellent = models.PositiveIntegerField(default=0)
     good = models.PositiveIntegerField(default=0)
     bad = models.PositiveIntegerField(default=0)

@@ -74,7 +74,7 @@ class ScoreStatView(APIView):
 
         date_joined = pupil.user.date_joined.date()
         difference_days = (date_today - date_joined).days
-        score_stats = ScoreDaily.objects.filter(pupil=pupil)
+        score_daily_queryset = ScoreDaily.objects.filter(pupil=pupil)
         stats = {
             'excellent': 0,
             'good': 0,
@@ -84,10 +84,12 @@ class ScoreStatView(APIView):
         initial_date = date_joined
         for _ in range(difference_days):
             try:
-                if score_stats[index].created_at == initial_date:
-                    if score_stats[index].ball + 100 > 80:
+                score_daily = score_daily_queryset[index]
+                score_daily_ball = score_daily.ball
+                if score_daily.created_at == initial_date:
+                    if score_daily_ball + 100 > 80:
                         stats['excellent'] += 1
-                    elif score_stats[index].ball + 100 > 60:
+                    elif score_daily_ball + 100 > 60:
                         stats['good'] += 1
                     else:
                         stats['bad'] += 1
@@ -100,7 +102,7 @@ class ScoreStatView(APIView):
 
         # Foydalanuvchi ScoreStat modelida mavjud bo'lsa, ma'lumotlar yangilanadi
         score_stat = ScoreStat.objects.filter(pupil=pupil).first()
-        if score_stat:
+        if score_stat is not None:
             score_stat.excellent = stats['excellent']
             score_stat.good = stats['good']
             score_stat.bad = stats['bad']
@@ -123,22 +125,23 @@ class ScoreDailyListView(APIView):
         today_date = datetime.datetime.now().date()
         start_date = today_date - datetime.timedelta(days=7)
         end_date = today_date - datetime.timedelta(days=1)
-        if user.date_joined.date() > start_date:
-            start_date = user.date_joined.date()
+        user_date_joined = user.date_joined.date()
+        if user_date_joined > start_date:
+            start_date = user_date_joined
         last_week_score_daily_list = ScoreDaily.objects.filter(pupil=pupil,
                                                                created_at__gte=start_date,
-                                                               created_at__lte=end_date)
+                                                               created_at__lte=end_date).order_by('-id')
+
         score_daily_list = []
         difference = (end_date - start_date).days + 1
         for _ in range(difference):
             for stat in last_week_score_daily_list:
                 if stat.created_at == end_date:
-                    score_daily_list.append(stat.ball)
+                    score_daily_list.append(stat.ball + 100)
                     break
             else:
-                score_daily_list.append(0)
+                score_daily_list.append(100)
             end_date -= datetime.timedelta(days=1)
-        score_daily_list = list(map(lambda x: x + 100, score_daily_list))
         return Response({'scores': score_daily_list})
 
 
