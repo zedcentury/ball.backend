@@ -1,7 +1,6 @@
 import datetime
 import random
 
-from django.contrib.auth.hashers import make_password
 from django.core.management import BaseCommand
 
 from common.models import ClassName
@@ -9,9 +8,9 @@ from score.models import Reason, Score, ScoreDaily, ScoreStat
 from user.models import User, Teacher, Parent, Pupil
 
 boys = ['Qodir', 'Tohir', 'Anvar', 'Jamol', 'Usmon', 'Po\'lat', 'Yo\'ldosh', 'Kamoliddin', 'Asliddin', 'Doston',
-        'Maxmud', 'Erkin', 'Otabek', 'Bekzod', 'Abdulla', 'Ilyos', 'Muhriddin']
+        'Maxmud', 'Erkin', 'Otabek', 'Bekzod', 'Abdulla', 'Ilyos', 'Muhriddin', 'To\'lqin', 'Jamshid', 'Saidjahon']
 girls = ['Malika', 'Jamila', 'Durdona', 'Komila', 'Feruza', 'Mohira', 'Zebo', 'Anora', 'Munisa', 'Odina',
-         'Kamola', 'Yulduz', 'Dinora']
+         'Kamola', 'Yulduz', 'Dinora', 'Manzura', 'Lola', 'Jamila', 'Mahliyo', 'Rohila', 'Maftuna', 'Nigora']
 hamma_ismlar = boys + girls
 undoshlar = 'bcdfghjklmnpqrstvwxyz'
 unlilar = 'aeiou'
