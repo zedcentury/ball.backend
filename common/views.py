@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from common.models import ClassName
 from common.serializers import ClassNameListSerializer, ClassNameCreateSerializer, ClassNameUpdateSerializer
 from config.mixins import PaginationMixin
+from config.permissions import IsAdmin
 from score.models import Reason
 from user.models import User, Pupil, Parent
 
@@ -26,15 +27,18 @@ class ClassNameListView(PaginationMixin, ListAPIView):
 
 
 class ClassNameCreateView(CreateAPIView):
+    permission_classes = [IsAdmin]
     serializer_class = ClassNameCreateSerializer
 
 
 class ClassNameUpdateView(UpdateAPIView):
+    permission_classes = [IsAdmin]
     serializer_class = ClassNameUpdateSerializer
     queryset = ClassName.objects.all()
 
 
 class ClassNameDestroyView(DestroyAPIView):
+    permission_classes = [IsAdmin]
     queryset = ClassName.objects.all()
 
     def destroy(self, request, *args, **kwargs):
@@ -45,6 +49,8 @@ class ClassNameDestroyView(DestroyAPIView):
 
 
 class StatView(APIView):
+    permission_classes = [IsAdmin]
+
     def get(self, request):
         teachers_count = User.objects.filter(user_type=User.UserTypeChoices.TEACHER).count()
         parents_count = Parent.objects.count()

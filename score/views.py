@@ -2,10 +2,12 @@ import datetime
 
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import CreateAPIView, ListAPIView, get_object_or_404, UpdateAPIView, DestroyAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from config.mixins import PaginationMixin
+from config.permissions import IsAdmin, IsTeacher
 from score.serializers import ScoreCreateSerializer, ReasonListSerializer, ReasonCreateSerializer, ScoreStatSerializer, \
     ReasonUpdateSerializer
 from score.models import ScoreDaily, Reason, ScoreStat
@@ -16,6 +18,7 @@ class ReasonListView(PaginationMixin, ListAPIView):
     """
     Holatlar ro'yxati
     """
+    permission_classes = [IsAdmin | IsTeacher]
     filter_backends = [SearchFilter]
     search_fields = ['text']
     serializer_class = ReasonListSerializer
@@ -26,6 +29,7 @@ class ReasonCreateView(APIView):
     """
     Holat qo'shish
     """
+    permission_classes = [IsAdmin]
 
     def post(self, request):
         serializer = ReasonCreateSerializer(data=request.data)
@@ -35,11 +39,13 @@ class ReasonCreateView(APIView):
 
 
 class ReasonUpdateView(UpdateAPIView):
+    permission_classes = [IsAdmin]
     serializer_class = ReasonUpdateSerializer
     queryset = Reason.objects.all()
 
 
 class ReasonDestroyView(DestroyAPIView):
+    permission_classes = [IsAdmin]
     queryset = Reason.objects.all()
 
 
@@ -47,6 +53,7 @@ class ScoreTodayView(APIView):
     """
     O'quvchining shu kuni to'plagan umumiy balli
     """
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id):
         pupil = get_object_or_404(Pupil.objects.all(), user_id=user_id)
@@ -61,6 +68,7 @@ class ScoreStatView(APIView):
     """
     Foydalanuvchining to'plagan ballari bo'yicha umumiy statistika
     """
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id):
         pupil = get_object_or_404(Pupil.objects.all(), user_id=user_id)
@@ -118,6 +126,7 @@ class ScoreDailyListView(APIView):
     """
     Oxirgi 7 kun natijalari
     """
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id):
         pupil = get_object_or_404(Pupil.objects.all(), user_id=user_id)
@@ -149,4 +158,5 @@ class ScoreCreateView(CreateAPIView):
     """
     O'qituvchi tomonidan ball berish
     """
+    permission_classes = [IsTeacher]
     serializer_class = ScoreCreateSerializer

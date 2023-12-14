@@ -10,7 +10,6 @@ from rest_framework.views import APIView
 from account.serializers import LoginSerializer, UserSerializer, ChangePasswordSerializer, ProfileSerializer
 
 
-# Create your views here.
 class LoginView(APIView):
     """
     Tizimga kirish

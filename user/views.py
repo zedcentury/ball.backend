@@ -8,11 +8,13 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListAPIView, DestroyAPIView, CreateAPIView, UpdateAPIView, get_object_or_404, \
     RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.models import ClassName
 from config.mixins import PaginationMixin
+from config.permissions import IsAdmin, IsTeacher, IsParent
 from score.models import ScoreDaily
 from user.filters import UserFilter
 from user.models import Pupil, Parent, Teacher, User
@@ -22,6 +24,7 @@ from user.serializers import UserListSerializer, UserCreateSerializer, \
 
 
 class UserListView(PaginationMixin, ListAPIView):
+    permission_classes = [IsAdmin | IsTeacher]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = UserFilter
     search_fields = ['full_name', 'username']
@@ -32,20 +35,24 @@ class UserListView(PaginationMixin, ListAPIView):
 
 
 class UserCreateView(CreateAPIView):
+    permission_classes = [IsAdmin]
     serializer_class = UserCreateSerializer
 
 
 class UserUpdateView(UpdateAPIView):
+    permission_classes = [IsAdmin]
     serializer_class = UserUpdateSerializer
     queryset = User.objects.all()
 
 
 class UserRetrieveView(RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = UserRetrieveSerializer
     queryset = User.objects.all()
 
 
 class UserDestroyView(DestroyAPIView):
+    permission_classes = [IsAdmin]
     queryset = User.objects.all()
 
     @transaction.atomic
@@ -61,6 +68,7 @@ class UserDestroyView(DestroyAPIView):
 
 
 class ChildrenView(PaginationMixin, ListAPIView):
+    permission_classes = [IsParent]
     serializer_class = ChildrenSerializer
 
     def get_queryset(self):
@@ -76,7 +84,7 @@ class ChildrenView(PaginationMixin, ListAPIView):
 
 
 class AttachParentToPupilView(APIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def post(self, request):
         serializer = AttachParentToPupilSerializer(data=request.data)
@@ -93,6 +101,8 @@ class AttachParentToPupilView(APIView):
 
 
 class AttachClassNameToPupilView(APIView):
+    permission_classes = [IsAdmin]
+
     def post(self, request):
         serializer = AttachClassNameToPupilSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -108,6 +118,8 @@ class AttachClassNameToPupilView(APIView):
 
 
 class CancelAttachParentView(APIView):
+    permission_classes = [IsAdmin]
+
     def delete(self, request, parent, pupil):
         parent_obj = get_object_or_404(Parent.objects.all(), user_id=parent)
         pupil_obj = get_object_or_404(Pupil.objects.all(), user_id=pupil)
@@ -117,6 +129,8 @@ class CancelAttachParentView(APIView):
 
 
 class CancelAttachClassNameView(APIView):
+    permission_classes = [IsAdmin]
+
     def delete(self, request, pk):
         pupil = get_object_or_404(Pupil.objects.all(), user_id=pk)
         pupil.class_name = None
