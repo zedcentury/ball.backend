@@ -15,7 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True)
+    current_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True, min_length=6, max_length=50, error_messages={
         "min_length": "Password must contain at least 6 characters",
         "max_length": "The password can be a maximum of 50 characters"
@@ -27,13 +27,13 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate(self, data):
         errors = {}
-        if not self.context.get('user').check_password(data.get('old_password')):
-            errors['old_password'] = "The password was entered incorrectly"
+        if not self.context.get('user').check_password(data.get('current_password')):
+            errors['current_password'] = "The password was entered incorrectly"
 
         if data.get('new_password') != data.get('confirm_password'):
             errors['confirm_password'] = "Passwords are not entered the same"
 
-        if data.get('new_password') == data.get('old_password'):
+        if data.get('new_password') == data.get('current_password'):
             errors['new_password'] = "The password is the same as the current password"
 
         if errors:
