@@ -104,7 +104,7 @@ class ScoreStatView(APIView):
         result['excellent'] += difference_days - result_count
 
         if not ScoreStat.objects.filter(pupil=pupil).exists():
-            score_stat = ScoreStat.objects.create({'pupil': pupil, **result})
+            score_stat = ScoreStat.objects.create(**{'pupil': pupil, **result})
         else:
             score_stat = ScoreStat.objects.filter(pupil=pupil, updated_at=date_today).first()
             if not score_stat:
