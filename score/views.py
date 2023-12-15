@@ -112,7 +112,6 @@ class ScoreStatView(APIView):
                 score_stat.good = result['good']
                 score_stat.bad = result['bad']
                 score_stat.save()
-
         return Response(ScoreStatSerializer(score_stat).data)
 
 
