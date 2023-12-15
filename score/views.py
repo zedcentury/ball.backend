@@ -1,5 +1,7 @@
 import datetime
 
+from django.db import models
+from django.db.models import Q, Case, When, Sum
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import CreateAPIView, ListAPIView, get_object_or_404, UpdateAPIView, DestroyAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -55,10 +57,10 @@ class ScoreTodayView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, user_id):
-        pupil = get_object_or_404(Pupil.objects.all(), user_id=user_id)
-        today = datetime.datetime.now()
-        today_score_daily = ScoreDaily.objects.filter(pupil=pupil, created_at=today.date()).first()
+    def get(self, request, pk):
+        pupil = get_object_or_404(Pupil.objects.all(), user_id=pk)
+        today_date = datetime.datetime.now().date()
+        today_score_daily = ScoreDaily.objects.filter(pupil=pupil, created_at=today_date).first()
         if today_score_daily is None:
             return Response({'today': 100})
         return Response({'today': today_score_daily.ball + 100})
@@ -70,55 +72,47 @@ class ScoreStatView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, user_id):
-        pupil = get_object_or_404(Pupil.objects.all(), user_id=user_id)
+    def get(self, request, pk):
+        pupil: Pupil = get_object_or_404(Pupil.objects.all(), user_id=pk)
         date_today = datetime.datetime.now().date()
 
-        # Agar bugun o'quvchining statiktikasi ScoreStat modelida yangilangan bo'lsa,
-        # ma'lumotlar modeldan olinadi
-        score_stat = ScoreStat.objects.filter(pupil=pupil, updated_at=date_today).first()
-        if score_stat is not None:
-            return Response(ScoreStatSerializer(score_stat).data)
+        excellent_condition = Case(
+            When(ball__gt=80 - 100, then=1),
+            default=0,
+            output_field=models.IntegerField(),
+        )
+        good_condition = Case(
+            When(Q(ball__gt=60 - 100, ball__lte=80 - 100), then=1),
+            default=0,
+            output_field=models.IntegerField(),
+        )
+        bad_condition = Case(
+            When(Q(ball__lte=60 - 100), then=1),
+            default=0,
+            output_field=models.IntegerField(),
+        )
 
-        date_joined = pupil.user.date_joined.date()
-        difference_days = (date_today - date_joined).days
-        score_daily_queryset = ScoreDaily.objects.filter(pupil=pupil)
-        stats = {
-            'excellent': 0,
-            'good': 0,
-            'bad': 0
-        }
-        index = 0
-        initial_date = date_joined
-        for _ in range(difference_days):
-            try:
-                score_daily = score_daily_queryset[index]
-                score_daily_ball = score_daily.ball
-                if score_daily.created_at == initial_date:
-                    if score_daily_ball + 100 > 80:
-                        stats['excellent'] += 1
-                    elif score_daily_ball + 100 > 60:
-                        stats['good'] += 1
-                    else:
-                        stats['bad'] += 1
-                    index += 1
-                else:
-                    stats['excellent'] += 1
-            except IndexError as e:
-                stats['excellent'] += 1
-            initial_date += datetime.timedelta(days=1)
+        result: dict = ScoreDaily.objects.filter(pupil=pupil).exclude(created_at=date_today).aggregate(
+            excellent=Sum(excellent_condition),
+            good=Sum(good_condition),
+            bad=Sum(bad_condition),
+        )
 
-        # Foydalanuvchi ScoreStat modelida mavjud bo'lsa, ma'lumotlar yangilanadi
-        score_stat = ScoreStat.objects.filter(pupil=pupil).first()
-        if score_stat is not None:
-            score_stat.excellent = stats['excellent']
-            score_stat.good = stats['good']
-            score_stat.bad = stats['bad']
-            score_stat.save()
-            return Response(ScoreStatSerializer(score_stat).data)
+        result_count = sum(result.values())
+        difference_days = (date_today - pupil.user.date_joined.date()).days
 
-        # Agar foydalanuvchi ScoreStat modelida mavjud bo'lmasa,
-        score_stat = ScoreStat.objects.create(**{'pupil': pupil, **stats})
+        result['excellent'] += difference_days - result_count
+
+        if not ScoreStat.objects.filter(pupil=pupil).exists():
+            score_stat = ScoreStat.objects.create({'pupil': pupil, **result})
+        else:
+            score_stat = ScoreStat.objects.filter(pupil=pupil, updated_at=date_today).first()
+            if not score_stat:
+                score_stat.excellent = result['excellent']
+                score_stat.good = result['good']
+                score_stat.bad = result['bad']
+                score_stat.save()
+
         return Response(ScoreStatSerializer(score_stat).data)
 
 
@@ -128,8 +122,8 @@ class ScoreDailyListView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, user_id):
-        pupil = get_object_or_404(Pupil.objects.all(), user_id=user_id)
+    def get(self, request, pk):
+        pupil = get_object_or_404(Pupil.objects.all(), user_id=pk)
         user = pupil.user
         today_date = datetime.datetime.now().date()
         start_date = today_date - datetime.timedelta(days=7)

@@ -47,6 +47,9 @@ class ScoreDaily(models.Model):
     ball = models.IntegerField()
     created_at = models.DateField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ['pupil', 'created_at']
+
     def __str__(self):
         return f'{self.pupil.user.full_name} ({self.ball}, {self.created_at})'
 

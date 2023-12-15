@@ -42,10 +42,18 @@ class ReasonUpdateSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class ScoreStatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScoreStat
+        fields = ['excellent', 'good', 'bad']
+
+
 class ScoreCreateSerializer(serializers.ModelSerializer):
+    user = serializers.IntegerField(write_only=True)
+
     class Meta:
         model = Score
-        fields = ['pupil', 'reason', 'ball']
+        fields = ['user', 'reason', 'ball']
 
     @staticmethod
     def validate_ball(value):
@@ -55,8 +63,8 @@ class ScoreCreateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        pupil = validated_data.get('pupil')
-        pupil = get_object_or_404(Pupil.objects.all(), user_id=pupil.id)
+        user = validated_data.pop('user')
+        pupil = get_object_or_404(Pupil.objects.all(), user_id=user)
         validated_data['pupil'] = pupil
         score = super().create(validated_data)
         ball = score.ball
@@ -67,9 +75,3 @@ class ScoreCreateSerializer(serializers.ModelSerializer):
         else:
             ScoreDaily.objects.create(pupil=pupil, ball=ball)
         return score
-
-
-class ScoreStatSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ScoreStat
-        fields = ['excellent', 'good', 'bad']
