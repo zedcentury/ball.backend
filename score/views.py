@@ -103,11 +103,14 @@ class ScoreStatView(APIView):
 
         result['excellent'] += difference_days - result_count
 
+        # Agar ScoreStat modelida pupil mavjud bo'lmasa
         if not ScoreStat.objects.filter(pupil=pupil).exists():
             score_stat = ScoreStat.objects.create(**{'pupil': pupil, **result})
         else:
             score_stat = ScoreStat.objects.filter(pupil=pupil, updated_at=date_today).first()
+            # Agar pupil uchun ScoreStat modeli bugun yangilangan bo'lmasa, ma'lumotlarni yangilaydi
             if not score_stat:
+                score_stat = ScoreStat.objects.filter(pupil=pupil).first()
                 score_stat.excellent = result['excellent']
                 score_stat.good = result['good']
                 score_stat.bad = result['bad']
