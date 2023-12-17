@@ -75,3 +75,16 @@ class ScoreCreateSerializer(serializers.ModelSerializer):
         else:
             ScoreDaily.objects.create(pupil=pupil, ball=ball)
         return score
+
+
+class ScoreListSerializer(serializers.ModelSerializer):
+    ball = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Score
+        fields = ['id', 'reason', 'ball']
+
+    def get_ball(self, obj):
+        if obj.ball > 0:
+            return f'+{obj.ball}'
+        return str(obj.ball)

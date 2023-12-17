@@ -11,8 +11,8 @@ from rest_framework.views import APIView
 from config.mixins import PaginationMixin
 from config.permissions import IsAdmin, IsTeacher
 from score.serializers import ScoreCreateSerializer, ReasonListSerializer, ReasonCreateSerializer, ScoreStatSerializer, \
-    ReasonUpdateSerializer
-from score.models import ScoreDaily, Reason, ScoreStat
+    ReasonUpdateSerializer, ScoreListSerializer
+from score.models import ScoreDaily, Reason, ScoreStat, Score
 from user.models import Pupil
 
 
@@ -156,3 +156,12 @@ class ScoreCreateView(CreateAPIView):
     """
     permission_classes = [IsTeacher]
     serializer_class = ScoreCreateSerializer
+
+
+class ScoreListView(PaginationMixin, ListAPIView):
+    serializer_class = ScoreListSerializer
+
+    def get_queryset(self):
+        user_id = self.request.query_params.get('user')
+        today_date = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        return Score.objects.filter(pupil__user_id=user_id, created_at__gte=today_date)
