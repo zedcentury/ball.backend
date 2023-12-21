@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from common.models import ClassName
 from config.mixins import PaginationMixin
 from config.permissions import IsAdmin, IsTeacher, IsParent
-from score.models import ScoreDaily
+from score.models import ScoreMonth
 from user.filters import UserFilter
 from user.models import Pupil, Parent, Teacher, User
 from user.serializers import UserListSerializer, UserCreateSerializer, \
@@ -73,14 +73,14 @@ class ChildrenView(PaginationMixin, ListAPIView):
 
     def get_queryset(self):
         parent = self.request.query_params.get('parent')
-        return User.objects.filter(user_type=User.UserTypeChoices.PUPIL,
-                                   pupil_to_user__parent_to_pupil__user_id=parent). \
-            prefetch_related('pupil_to_user__class_name'). \
-            annotate(class_name=F('pupil_to_user__class_name__name')). \
-            annotate(latest_ball=Coalesce(
-            Subquery(ScoreDaily.objects.filter(pupil__user_id=OuterRef('pk'), created_at=datetime.datetime.now().date()
-                                               ).order_by('-created_at').values('ball')[:1]), 0)). \
-            annotate(today_ball=F('latest_ball') + 100)
+        return (
+            User.objects.filter(user_type=User.UserTypeChoices.PUPIL, pupil_to_user__parent_to_pupil__user_id=parent).
+            prefetch_related('pupil_to_user__class_name').
+            annotate(class_name=F('pupil_to_user__class_name__name')).
+            annotate(latest_ball=Coalesce(Subquery(
+                ScoreMonth.objects.filter(user_id=OuterRef('pk'), created_at=datetime.datetime.now().date()).
+                order_by('-created_at').values('ball')[:1]), 0)).
+            annotate(latest_ball=F('latest_ball') + 100))
 
 
 class AttachParentToPupilView(APIView):
@@ -89,14 +89,18 @@ class AttachParentToPupilView(APIView):
     def post(self, request):
         serializer = AttachParentToPupilSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        parent = serializer.validated_data.get('parent')
-        pupil = serializer.validated_data.get('pupil')
-        parent_obj = get_object_or_404(Parent.objects.all(), user_id=parent)
-        pupil_obj = get_object_or_404(Pupil.objects.all(), user_id=pupil)
-        if parent_obj.children.filter(user_id=pupil).exists():
+
+        parent_user = serializer.validated_data.get('parent')
+        pupil_user = serializer.validated_data.get('pupil')
+
+        parent = get_object_or_404(Parent.objects.all(), user_id=parent_user)
+        pupil = get_object_or_404(Pupil.objects.all(), user_id=pupil_user)
+
+        if parent.children.filter(user_id=pupil_user).exists():
             raise ValidationError({'pupil': 'Bu o\'quvchi allaqachon biriktirilgan'})
-        parent_obj.children.add(pupil_obj)
-        parent_obj.save()
+
+        parent.children.add(pupil)
+        parent.save()
         return Response('Success')
 
 
@@ -106,14 +110,18 @@ class AttachClassNameToPupilView(APIView):
     def post(self, request):
         serializer = AttachClassNameToPupilSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         class_name = serializer.validated_data.get('class_name')
-        pupil = serializer.validated_data.get('pupil')
-        class_name_obj = get_object_or_404(ClassName.objects.all(), id=class_name)
-        pupil_obj: Pupil = get_object_or_404(Pupil.objects.all(), user_id=pupil)
-        if pupil_obj.class_name_id == class_name_obj.id:
+        pupil_user = serializer.validated_data.get('pupil')
+
+        class_name = get_object_or_404(ClassName.objects.all(), id=class_name)
+        pupil = get_object_or_404(Pupil.objects.all(), user_id=pupil_user)
+
+        if pupil.class_name is not None:
             raise ValidationError({'pupil': 'Bu o\'quvchi allaqachon sinfga biriktirilgan'})
-        pupil_obj.class_name = class_name_obj
-        pupil_obj.save()
+
+        pupil.class_name = class_name
+        pupil.save()
         return Response('Success')
 
 
@@ -123,6 +131,7 @@ class CancelAttachParentView(APIView):
     def delete(self, request, parent, pupil):
         parent_obj = get_object_or_404(Parent.objects.all(), user_id=parent)
         pupil_obj = get_object_or_404(Pupil.objects.all(), user_id=pupil)
+
         parent_obj.children.remove(pupil_obj)
         parent_obj.save()
         return Response('Success')

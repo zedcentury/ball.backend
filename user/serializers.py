@@ -49,11 +49,11 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
 
 class ChildrenSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField()
-    today_ball = serializers.IntegerField()
+    latest_ball = serializers.IntegerField()
 
     class Meta:
         model = User
-        fields = ['id', 'full_name', 'class_name', 'today_ball']
+        fields = ['id', 'full_name', 'class_name', 'latest_ball']
 
 
 class AttachParentToPupilSerializer(serializers.Serializer):
