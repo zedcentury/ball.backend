@@ -65,7 +65,7 @@ class ScoreListView(PaginationMixin, ListAPIView):
     def get_queryset(self):
         user_id = self.request.query_params.get('user')
         today_date = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        return Score.objects.filter(pupil__user_id=user_id, created_at__gte=today_date)
+        return Score.objects.filter(user_id=user_id, created_at__gte=today_date)
 
 
 class ScoreMonthView(APIView):
@@ -74,8 +74,9 @@ class ScoreMonthView(APIView):
     def get(self, request, pk):
         user = get_object_or_404(User.objects.all(), id=pk)
         today = datetime.datetime.now()
-        score_month = ScoreMonth.objects.filter(user=user, created_at__month=today.month,
+        score_month = ScoreMonth.objects.filter(user=user,
+                                                created_at__month=today.month,
                                                 created_at__year=today.year).first()
         if bool(score_month):
-            return Response({'result': score_month.ball})
+            return Response({'result': score_month.ball + 100})
         return Response({'result': 100})

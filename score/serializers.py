@@ -114,4 +114,4 @@ class ScoreListSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_created_at(obj: Score):
-        return obj.created_at.strftime("%d-%m-%Y %H:%M")
+        return obj.created_at.strftime("%d.%m.%Y %H:%M")
