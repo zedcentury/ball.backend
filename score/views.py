@@ -64,8 +64,17 @@ class ScoreListView(PaginationMixin, ListAPIView):
 
     def get_queryset(self):
         user_id = self.request.query_params.get('user')
-        today_date = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        return Score.objects.filter(user_id=user_id, created_at__gte=today_date)
+        start_date = datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        month = start_date.month
+        if month == 12:
+            year = start_date.year
+            end_date = datetime.datetime.now().replace(year=year + 1, month=1, day=1, hour=0, minute=0, second=0,
+                                                       microsecond=0)
+        else:
+            end_date = datetime.datetime.now().replace(month=month + 1, day=1, hour=0, minute=0, second=0,
+                                                       microsecond=0)
+        return (Score.objects.filter(user_id=user_id, created_at__gte=start_date, created_at__lt=end_date)
+                .order_by('-created_at'))
 
 
 class ScoreMonthView(APIView):

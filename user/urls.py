@@ -1,8 +1,7 @@
 from django.urls import path, include
 
-from user.views import UserListView, UserCreateView, UserUpdateView, \
-    UserDestroyView, AttachParentToPupilView, AttachClassNameToPupilView, CancelAttachClassNameView, \
-    CancelAttachParentView, ChildrenView, UserRetrieveView
+from user.views import UserListView, UserCreateView, UserUpdateView, UserDestroyView, UserRetrieveView, \
+    AttachPupilToParentView, AttachPupilToClassNameView, DetachPupilFromParentView, DetachPupilFromClassNameView
 
 urlpatterns = [
     path('user/', include([
@@ -12,10 +11,14 @@ urlpatterns = [
         path('destroy/<int:pk>/', UserDestroyView.as_view(), name='user-destroy'),
         path('retrieve/<int:pk>/', UserRetrieveView.as_view(), name='user-retrieve'),
     ])),
-    path('children/', ChildrenView.as_view(), name='children'),
-    path('attach/parent-to-pupil/', AttachParentToPupilView.as_view(), name='attach-parent-to-pupil'),
-    path('attach/class-name-to-pupil/', AttachClassNameToPupilView.as_view(), name='attach-class-name-to-pupil'),
-    path('cancel-attach/class-name/<int:pk>/', CancelAttachClassNameView.as_view(), name='cancel-attach-class-name'),
-    path('cancel-attach/parent/<int:parent>/<int:pupil>/', CancelAttachParentView.as_view(),
-         name='cancel-attach-parent')
+    path('attach/', include([
+        path('pupil-to-parent/', AttachPupilToParentView.as_view(), name='attach-pupil-to-parent'),
+        path('pupil-to-class-name/', AttachPupilToClassNameView.as_view(), name='attach-pupil-to-class-name'),
+    ])),
+    path('detach/', include([
+        path('pupil-from-parent/<int:parent>/<int:pupil>/', DetachPupilFromParentView.as_view(),
+             name='cancel-attach-class-name'),
+        path('pupil-from-class-name/<int:pk>/', DetachPupilFromClassNameView.as_view(),
+             name='cancel-attach-parent')
+    ]))
 ]

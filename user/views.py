@@ -18,20 +18,29 @@ from config.permissions import IsAdmin, IsTeacher, IsParent
 from score.models import ScoreMonth
 from user.filters import UserFilter
 from user.models import Pupil, Parent, Teacher, User
-from user.serializers import UserListSerializer, UserCreateSerializer, \
-    UserUpdateSerializer, AttachParentToPupilSerializer, AttachClassNameToPupilSerializer, ChildrenSerializer, \
-    UserRetrieveSerializer
+from user.serializers import UserListSerializer, UserCreateSerializer, UserUpdateSerializer, \
+    AttachPupilToParentSerializer, AttachPupilToClassNameSerializer, UserRetrieveSerializer
 
 
 class UserListView(PaginationMixin, ListAPIView):
-    permission_classes = [IsAdmin | IsTeacher]
+    permission_classes = [IsAdmin | IsTeacher | IsParent]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = UserFilter
     search_fields = ['full_name', 'username']
     serializer_class = UserListSerializer
 
     def get_queryset(self):
-        return User.objects.order_by('full_name')
+        today = datetime.datetime.now()
+        return (
+            User.objects.order_by('full_name').
+            prefetch_related('pupil_to_user__class_name').
+            annotate(class_name=F('pupil_to_user__class_name__name')).
+            annotate(latest_ball=Coalesce(Subquery(
+                ScoreMonth.objects.filter(user_id=OuterRef('pk'),
+                                          created_at__month=today.month,
+                                          created_at__year=today.year).
+                order_by('-created_at').values('ball')[:1]), 0)).
+            annotate(latest_ball=F('latest_ball') + 100))
 
 
 class UserCreateView(CreateAPIView):
@@ -67,27 +76,11 @@ class UserDestroyView(DestroyAPIView):
         return super().destroy(request, *args, **kwargs)
 
 
-class ChildrenView(PaginationMixin, ListAPIView):
-    permission_classes = [IsParent]
-    serializer_class = ChildrenSerializer
-
-    def get_queryset(self):
-        parent = self.request.query_params.get('parent')
-        return (
-            User.objects.filter(user_type=User.UserTypeChoices.PUPIL, pupil_to_user__parent_to_pupil__user_id=parent).
-            prefetch_related('pupil_to_user__class_name').
-            annotate(class_name=F('pupil_to_user__class_name__name')).
-            annotate(latest_ball=Coalesce(Subquery(
-                ScoreMonth.objects.filter(user_id=OuterRef('pk'), created_at=datetime.datetime.now().date()).
-                order_by('-created_at').values('ball')[:1]), 0)).
-            annotate(latest_ball=F('latest_ball') + 100))
-
-
-class AttachParentToPupilView(APIView):
+class AttachPupilToParentView(APIView):
     permission_classes = [IsAdmin]
 
     def post(self, request):
-        serializer = AttachParentToPupilSerializer(data=request.data)
+        serializer = AttachPupilToParentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         parent_user = serializer.validated_data.get('parent')
@@ -104,11 +97,11 @@ class AttachParentToPupilView(APIView):
         return Response('Success')
 
 
-class AttachClassNameToPupilView(APIView):
+class AttachPupilToClassNameView(APIView):
     permission_classes = [IsAdmin]
 
     def post(self, request):
-        serializer = AttachClassNameToPupilSerializer(data=request.data)
+        serializer = AttachPupilToClassNameSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         class_name = serializer.validated_data.get('class_name')
@@ -125,7 +118,7 @@ class AttachClassNameToPupilView(APIView):
         return Response('Success')
 
 
-class CancelAttachParentView(APIView):
+class DetachPupilFromParentView(APIView):
     permission_classes = [IsAdmin]
 
     def delete(self, request, parent, pupil):
@@ -137,7 +130,7 @@ class CancelAttachParentView(APIView):
         return Response('Success')
 
 
-class CancelAttachClassNameView(APIView):
+class DetachPupilFromClassNameView(APIView):
     permission_classes = [IsAdmin]
 
     def delete(self, request, pk):

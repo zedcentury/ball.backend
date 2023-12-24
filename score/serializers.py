@@ -83,10 +83,13 @@ class ScoreCreateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        user = validated_data.get('user')
         validated_data['author'] = self.context.get('request').user
         score = super().create(validated_data)
         today = datetime.datetime.now()
-        score_month = ScoreMonth.objects.filter(created_at__month=today.month, created_at__year=today.year).first()
+        score_month = ScoreMonth.objects.filter(user=user,
+                                                created_at__month=today.month,
+                                                created_at__year=today.year).first()
         if bool(score_month):
             ball = validated_data.get('ball')
             score_month.ball += ball

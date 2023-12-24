@@ -4,9 +4,12 @@ from user.models import Pupil, User, Parent, Teacher
 
 
 class UserListSerializer(serializers.ModelSerializer):
+    class_name = serializers.CharField()
+    latest_ball = serializers.IntegerField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'full_name']
+        fields = ['id', 'username', 'full_name', 'class_name', 'latest_ball']
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -47,20 +50,11 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
         fields = ['full_name']
 
 
-class ChildrenSerializer(serializers.ModelSerializer):
-    class_name = serializers.CharField()
-    latest_ball = serializers.IntegerField()
-
-    class Meta:
-        model = User
-        fields = ['id', 'full_name', 'class_name', 'latest_ball']
-
-
-class AttachParentToPupilSerializer(serializers.Serializer):
+class AttachPupilToParentSerializer(serializers.Serializer):
     parent = serializers.IntegerField()
     pupil = serializers.IntegerField()
 
 
-class AttachClassNameToPupilSerializer(serializers.Serializer):
+class AttachPupilToClassNameSerializer(serializers.Serializer):
     class_name = serializers.IntegerField()
     pupil = serializers.IntegerField()
