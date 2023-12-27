@@ -1,4 +1,4 @@
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.settings import api_settings
 
 
 class PaginationMixin:
@@ -10,5 +10,5 @@ class PaginationMixin:
         if request.query_params.get('pagination') == 'off':
             self.pagination_class = None
         else:
-            self.pagination_class = PageNumberPagination
+            self.pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
         return super().list(request, *args, **kwargs)

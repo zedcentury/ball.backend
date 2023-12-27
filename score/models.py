@@ -7,6 +7,7 @@ from user.models import Pupil, User
 class Reason(models.Model):
     """
     Turli xil holatlar uchun turli xil ballar
+    user_type - holat o'qituvchi yoki o'quvchiga tegishli ekanligini bildiradi
     text - holat matni (kitob o'qidi, darsga sababsiz kelmadi)
     ball - holat yuzasidan beriladigan ballar (30, -10)
     """

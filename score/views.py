@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 
 from config.mixins import PaginationMixin
 from config.permissions import IsAdmin, IsTeacher
+from score.filters import ReasonFilter
 from score.serializers import ScoreCreateSerializer, ReasonListSerializer, ReasonCreateSerializer, \
     ReasonUpdateSerializer, ScoreListSerializer
 from score.models import Reason, Score, ScoreMonth
@@ -21,7 +22,7 @@ class ReasonListView(PaginationMixin, ListAPIView):
     """
     permission_classes = [IsAdmin | IsTeacher]
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ['user_type']
+    filterset_class = ReasonFilter
     search_fields = ['text']
     serializer_class = ReasonListSerializer
     queryset = Reason.objects.all()

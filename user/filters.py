@@ -4,6 +4,7 @@ from user.models import Pupil, Parent, User
 
 
 class UserFilter(FilterSet):
+    user_type = filters.CharFilter(method='user_type_filter')
     parent = filters.NumberFilter(method='parent_filter')
     no_attach_parent = filters.NumberFilter(method='no_attach_parent_filter')
     class_name = filters.NumberFilter(method='class_name_filter')
@@ -12,6 +13,16 @@ class UserFilter(FilterSet):
     class Meta:
         model = User
         fields = ['user_type', 'parent', 'no_attach_parent', 'class_name', 'no_attach_class_name']
+
+    @staticmethod
+    def user_type_filter(queryset, name, value):
+        user_types = ['admin', 'teacher', 'parent', 'pupil']
+
+        if value not in user_types:
+            return queryset
+
+        user_type = user_types.index(value)
+        return queryset.filter(user_type=user_type)
 
     @staticmethod
     def parent_filter(queryset, name, value):

@@ -1,28 +1,27 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import IsAuthenticated
 
 from user.models import User
 
 
-class IsAdmin(BasePermission):
+class IsAdmin(IsAuthenticated):
     def has_permission(self, request, view):
-        return (bool(request.user) and
-                request.user.is_authenticated and
-                request.user.user_type == User.UserTypeChoices.ADMIN)
+        permission = super().has_permission(request, view)
+        return permission and request.user.user_type == User.UserTypeChoices.ADMIN
 
 
-class IsTeacher(BasePermission):
+class IsTeacher(IsAuthenticated):
     def has_permission(self, request, view):
-        return (bool(request.user) and request.user.is_authenticated and
-                request.user.user_type == User.UserTypeChoices.TEACHER)
+        permission = super().has_permission(request, view)
+        return permission and request.user.user_type == User.UserTypeChoices.TEACHER
 
 
-class IsParent(BasePermission):
+class IsParent(IsAuthenticated):
     def has_permission(self, request, view):
-        return (bool(request.user) and request.user.is_authenticated and
-                request.user.user_type == User.UserTypeChoices.PARENT)
+        permission = super().has_permission(request, view)
+        return permission and request.user.user_type == User.UserTypeChoices.PARENT
 
 
-class IsPupil(BasePermission):
+class IsPupil(IsAuthenticated):
     def has_permission(self, request, view):
-        return (bool(request.user) and request.user.is_authenticated and
-                request.user.user_type == User.UserTypeChoices.PUPIL)
+        permission = super().has_permission(request, view)
+        return permission and request.user.user_type == User.UserTypeChoices.PUPIL
