@@ -1,7 +1,7 @@
 import datetime
 
 from django.db import transaction
-from django.db.models import F, Subquery, OuterRef
+from django.db.models import F, Subquery, OuterRef, Case, When, Value, CharField
 from django.db.models.functions import Coalesce
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import ValidationError
@@ -34,7 +34,13 @@ class UserListView(PaginationMixin, ListAPIView):
         return (
             User.objects.order_by('full_name').
             prefetch_related('pupil_to_user__class_name').
-            annotate(class_name=F('pupil_to_user__class_name__name')).
+            annotate(class_name=Case(
+                When(
+                    pupil_to_user__class_name__name__isnull=False,
+                    then=F('pupil_to_user__class_name__name')
+                ),
+                default=Value("-", output_field=CharField())
+            )).
             annotate(latest_ball=Coalesce(Subquery(
                 ScoreMonth.objects.filter(user_id=OuterRef('pk'),
                                           created_at__month=today.month,
