@@ -4,7 +4,7 @@ from rest_framework.exceptions import ValidationError
 from common.models import ClassName
 
 
-class ClassNamesSerializer(serializers.ModelSerializer):
+class ClassNameListSerializer(serializers.ModelSerializer):
     pupils_count = serializers.IntegerField(default=0)
 
     class Meta:
@@ -13,6 +13,14 @@ class ClassNamesSerializer(serializers.ModelSerializer):
 
 
 class ClassNameCreateSerializer(serializers.ModelSerializer):
+    pupils_count = serializers.IntegerField(default=0, read_only=True)
+
     class Meta:
         model = ClassName
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'pupils_count']
+
+
+class ClassNameUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClassName
+        fields = ['name']

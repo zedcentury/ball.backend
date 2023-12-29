@@ -1,84 +1,146 @@
 import datetime
 
-from django.db.models import Subquery, OuterRef, F
+from django.db import transaction
+from django.db.models import F, Subquery, OuterRef, Case, When, Value, CharField
 from django.db.models.functions import Coalesce
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, DestroyAPIView, CreateAPIView, UpdateAPIView, get_object_or_404, \
+    RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from common.models import ClassName
 from config.mixins import PaginationMixin
-from score.models import ScoreDaily
-from user.filters import PupilFilter
-from user.models import Pupil, Parent, Teacher
-from user.serializers import PupilsSerializer, PupilCreateSerializer, \
-    TeachersSerializer, TeacherCreateSerializer, ParentsSerializer, \
-    ParentCreateSerializer
+from config.permissions import IsAdmin, IsTeacher, IsParent
+from score.models import ScoreMonth
+from user.filters import UserFilter
+from user.models import Pupil, Parent, Teacher, User
+from user.serializers import UserListSerializer, UserCreateSerializer, UserUpdateSerializer, \
+    AttachPupilToParentSerializer, AttachPupilToClassNameSerializer, UserRetrieveSerializer
 
 
-class BaseCreateView(APIView):
-    create_serializer_class = None
-    retrieve_serializer_class = None
-
-    def post(self, request, *args, **kwargs):
-        create_serializer = self.create_serializer_class(data=request.data)
-        if create_serializer.is_valid():
-            instance = create_serializer.save()
-            retrieve_serializer = self.retrieve_serializer_class(instance)
-            return Response(retrieve_serializer.data, status=status.HTTP_201_CREATED)
-        return Response(create_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class TeachersView(ListAPIView):
-    serializer_class = TeachersSerializer
-    filter_backends = [SearchFilter]
-    search_fields = ['user__first_name', 'user__last_name', 'user__username']
+class UserListView(PaginationMixin, ListAPIView):
+    permission_classes = [IsAdmin | IsTeacher | IsParent]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_class = UserFilter
+    search_fields = ['full_name', 'username']
+    serializer_class = UserListSerializer
 
     def get_queryset(self):
-        return Teacher.objects.prefetch_related('user')
+        today = datetime.datetime.now()
+        return (
+            User.objects.order_by('full_name').
+            prefetch_related('pupil_to_user__class_name').
+            annotate(class_name=Case(
+                When(
+                    pupil_to_user__class_name__name__isnull=False,
+                    then=F('pupil_to_user__class_name__name')
+                ),
+                default=Value("-", output_field=CharField())
+            )).
+            annotate(latest_ball=Coalesce(Subquery(
+                ScoreMonth.objects.filter(user_id=OuterRef('pk'),
+                                          created_at__month=today.month,
+                                          created_at__year=today.year).
+                order_by('-created_at').values('ball')[:1]), 0)).
+            annotate(latest_ball=F('latest_ball') + 100))
 
 
-class TeacherCreateView(BaseCreateView):
-    create_serializer_class = TeacherCreateSerializer
-    retrieve_serializer_class = TeachersSerializer
+class UserCreateView(CreateAPIView):
+    permission_classes = [IsAdmin]
+    serializer_class = UserCreateSerializer
 
 
-class ParentsView(ListAPIView):
-    serializer_class = ParentsSerializer
-    filter_backends = [SearchFilter]
-    search_fields = ['user__first_name', 'user__last_name', 'user__username']
-
-    def get_queryset(self):
-        return Parent.objects.prefetch_related('user')
+class UserUpdateView(UpdateAPIView):
+    permission_classes = [IsAdmin]
+    serializer_class = UserUpdateSerializer
+    queryset = User.objects.all()
 
 
-class ParentCreateView(BaseCreateView):
-    create_serializer_class = ParentCreateSerializer
-    retrieve_serializer_class = ParentsSerializer
+class UserRetrieveView(RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserRetrieveSerializer
+    queryset = User.objects.all()
 
 
-class PupilsView(PaginationMixin, ListAPIView):
-    serializer_class = PupilsSerializer
-    filter_backends = [SearchFilter, DjangoFilterBackend]
-    search_fields = ['user__first_name', 'user__last_name', 'user__username']
-    filterset_class = PupilFilter
+class UserDestroyView(DestroyAPIView):
+    permission_classes = [IsAdmin]
+    queryset = User.objects.all()
 
-    def get_queryset(self):
-        return Pupil.objects.prefetch_related('user').annotate(
-            latest_ball=Coalesce(
-                Subquery(ScoreDaily.objects.filter(
-                    pupil=OuterRef('pk'),
-                    created_at=datetime.datetime.now().date()
-                ).order_by('-created_at').values('ball')[:1]),
-                0
-            )
-        ).annotate(
-            today_ball=F('latest_ball') + 100
-        )
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        if user.user_type == User.UserTypeChoices.TEACHER:
+            Teacher.objects.filter(user=user).delete()
+        elif user.user_type == User.UserTypeChoices.PARENT:
+            Parent.objects.filter(user=user).delete()
+        elif user.user_type == User.UserTypeChoices.PUPIL:
+            Pupil.objects.filter(user=user).delete()
+        return super().destroy(request, *args, **kwargs)
 
 
-class PupilCreateView(BaseCreateView):
-    create_serializer_class = PupilCreateSerializer
-    retrieve_serializer_class = PupilsSerializer
+class AttachPupilToParentView(APIView):
+    permission_classes = [IsAdmin]
+
+    def post(self, request):
+        serializer = AttachPupilToParentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        parent_user = serializer.validated_data.get('parent')
+        pupil_user = serializer.validated_data.get('pupil')
+
+        parent = get_object_or_404(Parent.objects.all(), user_id=parent_user)
+        pupil = get_object_or_404(Pupil.objects.all(), user_id=pupil_user)
+
+        if parent.children.filter(user_id=pupil_user).exists():
+            raise ValidationError({'pupil': 'Bu o\'quvchi allaqachon biriktirilgan'})
+
+        parent.children.add(pupil)
+        parent.save()
+        return Response('Success')
+
+
+class AttachPupilToClassNameView(APIView):
+    permission_classes = [IsAdmin]
+
+    def post(self, request):
+        serializer = AttachPupilToClassNameSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        class_name = serializer.validated_data.get('class_name')
+        pupil_user = serializer.validated_data.get('pupil')
+
+        class_name = get_object_or_404(ClassName.objects.all(), id=class_name)
+        pupil = get_object_or_404(Pupil.objects.all(), user_id=pupil_user)
+
+        if pupil.class_name is not None:
+            raise ValidationError({'pupil': 'Bu o\'quvchi allaqachon sinfga biriktirilgan'})
+
+        pupil.class_name = class_name
+        pupil.save()
+        return Response('Success')
+
+
+class DetachPupilFromParentView(APIView):
+    permission_classes = [IsAdmin]
+
+    def delete(self, request, parent, pupil):
+        parent_obj = get_object_or_404(Parent.objects.all(), user_id=parent)
+        pupil_obj = get_object_or_404(Pupil.objects.all(), user_id=pupil)
+
+        parent_obj.children.remove(pupil_obj)
+        parent_obj.save()
+        return Response('Success')
+
+
+class DetachPupilFromClassNameView(APIView):
+    permission_classes = [IsAdmin]
+
+    def delete(self, request, pk):
+        pupil = get_object_or_404(Pupil.objects.all(), user_id=pk)
+        pupil.class_name = None
+        pupil.save()
+        return Response('Success')

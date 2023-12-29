@@ -11,20 +11,18 @@ class User(AbstractUser):
         PARENT = 2
         PUPIL = 3
 
-    first_name = models.CharField("First name", max_length=150)
-    last_name = models.CharField("Last name", max_length=150)
-    userType = models.PositiveSmallIntegerField(choices=UserTypeChoices.choices, default=UserTypeChoices.ADMIN)
-
-    @property
-    def full_name(self):
-        return f'{self.first_name} {self.last_name}'
+    first_name = None
+    last_name = None
+    full_name = models.CharField('Full name', max_length=150)
+    user_type = models.PositiveSmallIntegerField(choices=UserTypeChoices.choices, default=UserTypeChoices.ADMIN)
 
 
 class Pupil(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='pupil_to_user', limit_choices_to={
-        'userType': User.UserTypeChoices.PUPIL
+        'user_type': User.UserTypeChoices.PUPIL
     })
-    class_name = models.ForeignKey(ClassName, on_delete=models.RESTRICT, related_name='pupil_to_class_name')
+    class_name = models.ForeignKey(ClassName, on_delete=models.RESTRICT, related_name='pupil_to_class_name',
+                                   default=None, null=True, blank=True)
 
     def __str__(self):
         return f'{self.user.full_name}, {self.class_name}'
@@ -32,7 +30,7 @@ class Pupil(models.Model):
 
 class Parent(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='parent_to_user', limit_choices_to={
-        'userType': User.UserTypeChoices.PARENT
+        'user_type': User.UserTypeChoices.PARENT
     })
     children = models.ManyToManyField(Pupil, related_name='parent_to_pupil')
 
@@ -42,7 +40,7 @@ class Parent(models.Model):
 
 class Teacher(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='teacher_to_user', limit_choices_to={
-        'userType': User.UserTypeChoices.TEACHER
+        'user_type': User.UserTypeChoices.TEACHER
     })
     pupils = models.ManyToManyField(Pupil)
 

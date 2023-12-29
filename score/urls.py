@@ -1,13 +1,18 @@
-from django.urls import path
+from django.urls import path, include
 
-from score.views import ReasonListView, ReasonCreateView, ScoreTodayView, ScoreStatView, ScoreDailyListView, \
-    ScoreCreateView
+from score.views import ReasonListView, ReasonCreateView, ScoreCreateView, ReasonUpdateView, ReasonDestroyView, \
+    ScoreListView, ScoreMonthView
 
 urlpatterns = [
-    path('reason/list/', ReasonListView.as_view(), name='reason-list'),
-    path('reason/create/', ReasonCreateView.as_view(), name='reason-create'),
-    path('score/today/<int:user_id>/', ScoreTodayView.as_view(), name='score'),
-    path('score/stat/<int:user_id>/', ScoreStatView.as_view(), name='score-stat'),
-    path('score/daily/list/<int:user_id>/', ScoreDailyListView.as_view(), name='score-stats'),
-    path('score/create/', ScoreCreateView.as_view(), name='score-create')
+    path('reason/', include([
+        path('list/', ReasonListView.as_view(), name='reason-list'),
+        path('create/', ReasonCreateView.as_view(), name='reason-create'),
+        path('update/<int:pk>/', ReasonUpdateView.as_view(), name='reason-update'),
+        path('destroy/<int:pk>/', ReasonDestroyView.as_view(), name='reason-destroy'),
+    ])),
+    path('score/', include([
+        path('create/', ScoreCreateView.as_view(), name='score-create'),
+        path('list/', ScoreListView.as_view(), name='score-list'),
+        path('month/<int:pk>/', ScoreMonthView.as_view(), name='score-month')
+    ]))
 ]
