@@ -1,5 +1,7 @@
 import datetime
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -83,7 +85,7 @@ class ScoreCreateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        user = validated_data.get('user')
+        user: User = validated_data.get('user')
         validated_data['author'] = self.context.get('request').user
         score = super().create(validated_data)
         today = datetime.datetime.now()
@@ -98,6 +100,31 @@ class ScoreCreateSerializer(serializers.ModelSerializer):
             user = validated_data.get('user')
             ball = validated_data.get('ball')
             ScoreMonth.objects.create(user=user, ball=ball)
+
+        # Send notification
+        try:
+            notification_data = {
+                'type': 'notification.message',
+                'message': 'You received a ball!',
+            }
+
+            # Send notification to teacher/pupil
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'user_{user.id}',  # Group name for the teacher/pupil
+                notification_data
+            )
+
+            if user.user_type == User.UserTypeChoices.PUPIL:
+                # Send notification to parents
+                for parent in list(user.pupil_to_user.parent_to_pupil.values_list('user_id', flat=True)):
+                    async_to_sync(channel_layer.group_send)(
+                        f'user_{parent}',  # Group name for the parent
+                        notification_data
+                    )
+        except Exception as e:
+            print(e)
+
         return score
 
 
