@@ -13,7 +13,7 @@
             params = '?' + sp[1];
         }
 
-        const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/notification/' + params);
+        const chatSocket = new WebSocket('wss://' + window.location.host + '/ws/notification/' + params);
 
         chatSocket.onmessage = function (e) {
             const data = JSON.parse(e.data);
