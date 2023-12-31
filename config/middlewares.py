@@ -8,8 +8,10 @@ class TokenAuthMiddleware(BaseMiddleware):
     async def __call__(self, scope, receive, send):
         # Extract token from query parameters or headers
         # print(scope)
-        token = scope.get('query_string').decode('utf-8').split('=')[1]
-        print(token)
+        token_query = scope.get('query_string').decode('utf-8').split('=')
+        token = None
+        if len(token_query) == 2:
+            token = token_query[1]
         if not token:
             scope['user'] = AnonymousUser()
             return await super().__call__(scope, receive, send)

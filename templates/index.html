@@ -5,9 +5,15 @@
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Notification test</title>
     <script>
-        const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/notification/?token=7d43a3cb9a59724c839b4ff0ffa84b61da0e5ede');
+        const sp = window.location.href.split('?');
+        let params = '';
+        if (sp.length === 2) {
+            params = '?' + sp[1];
+        }
+
+        const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/notification/' + params);
 
         chatSocket.onmessage = function (e) {
             const data = JSON.parse(e.data);
