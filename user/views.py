@@ -1,7 +1,7 @@
 import datetime
 
 from django.db import transaction
-from django.db.models import F, Subquery, OuterRef, Case, When, Value, CharField
+from django.db.models import F, Subquery, OuterRef, Case, When, Value, CharField, Q
 from django.db.models.functions import Coalesce
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import ValidationError
@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 from common.models import ClassName
 from config.mixins import PaginationMixin
-from config.permissions import IsAdmin, IsTeacher, IsParent
+from config.permissions import IsAdmin
 from score.models import ScoreMonth
 from user.filters import UserFilter
 from user.models import Pupil, Parent, Teacher, User
@@ -23,7 +23,7 @@ from user.serializers import UserListSerializer, UserCreateSerializer, UserUpdat
 
 
 class UserListView(PaginationMixin, ListAPIView):
-    permission_classes = [IsAdmin | IsTeacher | IsParent]
+    # permission_classes = [IsAdmin | IsTeacher | IsParent]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = UserFilter
     search_fields = ['full_name', 'username']
@@ -31,9 +31,10 @@ class UserListView(PaginationMixin, ListAPIView):
 
     def get_queryset(self):
         today = datetime.datetime.now()
+
         return (
             User.objects.order_by('full_name').
-            prefetch_related('pupil_to_user__class_name').
+            prefetch_related('pupil_to_user__class_name', 'score_month_to_user').
             annotate(class_name=Case(
                 When(
                     pupil_to_user__class_name__name__isnull=False,
@@ -144,3 +145,41 @@ class DetachPupilFromClassNameView(APIView):
         pupil.class_name = None
         pupil.save()
         return Response('Success')
+
+
+class PupilStatsView(APIView):
+    # permission_classes = [IsAdmin]
+
+    def get(self, request):
+        today = datetime.date.today()
+
+        return Response({
+            "perfect": User.objects.filter(
+                user_type=User.UserTypeChoices.PUPIL,
+                score_month_to_user__ball__gt=100 - 100,
+                score_month_to_user__created_at__month=today.month,
+                score_month_to_user__created_at__year=today.year
+            ).count(),
+            "best": User.objects.filter(
+                Q(score_month_to_user__ball__gte=72 - 100,
+                  score_month_to_user__ball__lte=100 - 100,
+                  score_month_to_user__created_at__month=today.month,
+                  score_month_to_user__created_at__year=today.year,
+                  user_type=User.UserTypeChoices.PUPIL) |
+                Q(score_month_to_user__isnull=True,
+                  user_type=User.UserTypeChoices.PUPIL)
+            ).count(),
+            "good": User.objects.filter(
+                score_month_to_user__ball__gte=55 - 100,
+                score_month_to_user__ball__lt=72 - 100,
+                score_month_to_user__created_at__month=today.month,
+                score_month_to_user__created_at__year=today.year,
+                user_type=User.UserTypeChoices.PUPIL,
+            ).count(),
+            "bad": User.objects.filter(
+                score_month_to_user__ball__lt=55 - 100,
+                score_month_to_user__created_at__month=today.month,
+                score_month_to_user__created_at__year=today.year,
+                user_type=User.UserTypeChoices.PUPIL,
+            ).count()
+        })
