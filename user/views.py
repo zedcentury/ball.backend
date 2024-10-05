@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 from common.models import ClassName
 from config.mixins import PaginationMixin
-from config.permissions import IsAdmin
+from config.permissions import IsAdmin, IsTeacher, IsParent
 from score.models import ScoreMonth
 from user.filters import UserFilter
 from user.models import Pupil, Parent, Teacher, User
@@ -23,7 +23,7 @@ from user.serializers import UserListSerializer, UserCreateSerializer, UserUpdat
 
 
 class UserListView(PaginationMixin, ListAPIView):
-    # permission_classes = [IsAdmin | IsTeacher | IsParent]
+    permission_classes = [IsAdmin | IsTeacher | IsParent]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = UserFilter
     search_fields = ['full_name', 'username']
@@ -148,7 +148,7 @@ class DetachPupilFromClassNameView(APIView):
 
 
 class PupilStatsView(APIView):
-    # permission_classes = [IsAdmin]
+    permission_classes = [IsAdmin]
 
     def get(self, request):
         today = datetime.date.today()
