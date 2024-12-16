@@ -9,7 +9,7 @@ class UserListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'full_name', 'class_name', 'latest_ball']
+        fields = ['id', 'username', 'full_name', 'class_name', 'latest_ball', 'image']
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -47,7 +47,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 class UserRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['full_name']
+        fields = ['full_name', 'image']
 
 
 class AttachPupilToParentSerializer(serializers.Serializer):
